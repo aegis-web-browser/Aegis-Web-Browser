@@ -1,0 +1,73 @@
+name: Publish verified Aegis Web 5.8.5.1 application sources
+
+on:
+  push:
+    branches:
+      - opensource-5.8.5.1-review
+    paths:
+      - .github/workflows/publish-recovered-sources.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source review branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download original release installer (never execute it)
+        run: |
+          curl --fail --location --retry 3 --output /tmp/Aegis-Web-Setup-Windows.exe \
+            https://github.com/aegis-web-browser/Aegis-Web-Browser/releases/download/5.8.5.1/Aegis-Web-Setup-Windows.exe
+          echo "bfa41b02ab415e847ac0b71b62f1ef9c9839ef23afd343260c18d993f3d0308b  /tmp/Aegis-Web-Setup-Windows.exe" | sha256sum --check
+      - name: Extract allowlisted application files, without running installer
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, io, pathlib, struct, zipfile
+          b = pathlib.Path('/tmp/Aegis-Web-Setup-Windows.exe').read_bytes()
+          expected_installer = "bfa41b02ab415e847ac0b71b62f1ef9c9839ef23afd343260c18d993f3d0308b"
+          assert hashlib.sha256(b).hexdigest() == expected_installer
+          eocd = b.find(b'PK\x05\x06')
+          assert eocd != -1, 'Embedded ZIP end-of-central-directory record not found'
+          magic,disk,disk_cd,num_disk,num_total,cd_size,cd_offset,comment_len = struct.unpack_from('<IHHHHIIH',b,eocd)
+          assert magic == 0x06054b50 and num_disk == num_total == 13
+          start = eocd - cd_offset - cd_size
+          assert b[start:start+4] == b'PK\x03\x04'
+          payload = b[start:eocd+22+comment_len]
+          expected = {
+              'main.js', 'preload.js', 'webview-preload.js', 'pdf-preload.js', 'package.json',
+              'src/aegis-tools.js', 'src/index.html', 'src/pdf-studio.html',
+              'src/pdf-studio.js', 'src/renderer.js', 'src/style.css',
+              'build/icon.ico', 'build/icon.png'
+          }
+          with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+              names = set(archive.namelist())
+              assert names == expected, f'Unexpected archive contents: {sorted(names ^ expected)}'
+              for name in sorted(expected):
+                  blob = archive.read(name)
+                  dest = pathlib.Path(name)
+                  dest.parent.mkdir(parents=True, exist_ok=True)
+                  dest.write_bytes(blob)
+                  print(f'Extracted {name}: {len(blob)} bytes; SHA256 {hashlib.sha256(blob).hexdigest()}')
+          PY
+      - name: Check JavaScript syntax
+        run: |
+          for file in main.js preload.js webview-preload.js pdf-preload.js src/*.js; do
+            node --check "$file"
+          done
+      - name: Commit recovered source files to review branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- main.js preload.js webview-preload.js pdf-preload.js package.json src build
+          if ! git diff --cached --quiet; then
+            git commit -m "source: publish extracted application files from verified 5.8.5.1 installer"
+            git push origin HEAD:opensource-5.8.5.1-review
+          else
+            echo "No changes to commit"
+          fi

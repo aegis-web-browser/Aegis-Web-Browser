@@ -1,0 +1,56 @@
+{
+  "name": "aegis-web",
+  "version": "5.8.5.1",
+  "description": "Aegis Web 5.8.5.1 — GitHub Releases updates, PDF Studio et Aegis Cast",
+  "main": "main.js",
+  "author": "Aegis Web",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win nsis --x64",
+    "build:dir": "electron-builder --win dir --x64"
+  },
+  "devDependencies": {
+    "electron": "44.9.3",
+    "electron-builder": "26.16.1"
+  },
+  "build": {
+    "appId": "com.aegisweb.browser.clean531",
+    "productName": "Aegis Web",
+    "artifactName": "Aegis-Web-Setup-5.8.5.1.${ext}",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "webview-preload.js",
+      "src/**/*",
+      "build/icon.png",
+      "package.json",
+      "pdf-preload.js"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Aegis Web",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    }
+  }
+}
