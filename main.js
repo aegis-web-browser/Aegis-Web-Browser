@@ -8,8 +8,9 @@ const os = require('os');
 const zlib = require('zlib');
 const { spawn, execFile } = require('child_process');
 const { trustedUpdateUrl, requiredUpdateSha256 } = require('./lib/update-security');
+const { compareVersions } = require('./lib/version');
 
-const APP_VERSION = '5.8.5.1';
+const APP_VERSION = require('./package.json').version;
 const SUPPORT_URL = 'https://buymeacoffee.com/aegisweb';
 
 // Clean build 5.3.0: isolate Aegis from every previous profile so an old
@@ -1728,14 +1729,6 @@ let updateState = {
   downloadedPath: '',
   error: ''
 };
-function compareVersions(a, b) {
-  const pa=String(a||'0').split('.').map(x=>parseInt(x,10)||0);
-  const pb=String(b||'0').split('.').map(x=>parseInt(x,10)||0);
-  for (let i=0;i<Math.max(pa.length,pb.length);i++) {
-    const d=(pa[i]||0)-(pb[i]||0); if (d) return d>0?1:-1;
-  }
-  return 0;
-}
 function emitUpdateStatus(extra={}) {
   updateState={...updateState,...extra,currentVersion:APP_VERSION};
   try { mainWindow?.webContents.send('update:status', updateState); } catch {}
