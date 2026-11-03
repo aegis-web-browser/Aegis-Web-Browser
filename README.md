@@ -1,5 +1,16 @@
 # Aegis Web Browser · Navigateur de bureau / Desktop browser
 
+> [!IMPORTANT]
+> **🌐 NOUVELLE ADRESSE OFFICIELLE / NEW OFFICIAL WEBSITE**
+>
+> **FR — Le site d'Aegis Web a déménagé : https://aegis-web-browser.surge.sh/**
+>
+> L'ancienne adresse `https://aegis-web-browser.netlify.app/` peut encore être accessible, mais **elle n'est plus à jour et ne doit plus être utilisée comme site officiel**. Mettez vos favoris à jour.
+>
+> **EN — Aegis Web has moved to: https://aegis-web-browser.surge.sh/**
+>
+> The old Netlify URL may still load, but **it is no longer maintained or current**. Please update your bookmarks.
+
 **Français** · [English](#english) · [Guide complet FR](docs/FEATURES.fr.md) · [Full English guide](docs/FEATURES.en.md)
 
 Aegis Web est un navigateur de bureau basé sur **Electron / Chromium**, avec des outils intégrés pour la navigation, la confidentialité et la productivité.
