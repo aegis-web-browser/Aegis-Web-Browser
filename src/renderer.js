@@ -1605,9 +1605,9 @@ async function openDownloadVirusTotal(download) {
     return;
   }
   if (result.mode === 'needs-key') {
-    createTab(result.manualUploadUrl || 'https://www.virustotal.com/gui/home/upload');
+    createTab(result.searchUrl || 'https://www.virustotal.com/gui/home/search');
     closeDownloadsPopover();
-    showToast(uiMessage('No VT API key: upload the file manually if you wish. Nothing was sent.', 'Sans clé API VT : importez le fichier manuellement si vous le souhaitez. Rien n’a été envoyé.'));
+    showToast(uiMessage('No VT API key: opening hash search. If no report exists, upload manually. Nothing was sent.', 'Sans clé API VT : recherche de l’empreinte. Si aucun rapport n’existe, importez le fichier manuellement. Rien n’a été envoyé.'));
     return;
   }
   if (result.mode === 'unknown') {
