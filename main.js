@@ -7,6 +7,7 @@ const http = require('http');
 const os = require('os');
 const zlib = require('zlib');
 const { spawn, execFile } = require('child_process');
+const { trustedUpdateUrl, requiredUpdateSha256 } = require('./lib/update-security');
 
 const APP_VERSION = '5.8.5.1';
 const SUPPORT_URL = 'https://buymeacoffee.com/aegisweb';
@@ -1823,6 +1824,9 @@ async function checkForUpdates(manual=false) {
     const chosen=chooseGithubAsset(release);
     if (available && !chosen.asset) throw new Error(process.platform==='darwin'?'GitHub Release is missing Aegis-Web-macOS.zip.':'GitHub Release is missing Aegis-Web-App-Update.zip or Aegis-Web-Setup-Windows.exe.');
     const asset=chosen.asset||{};
+    if (available && !githubAssetDigest(asset)) {
+      throw new Error('Update blocked: GitHub Release asset has no SHA-256 digest.');
+    }
     return emitUpdateStatus({
       configured:true,checking:false,available,status:available?'available':'current',latestVersion,manifestUrl:apiUrl,repository,
       releaseUrl:String(release.html_url||`https://github.com/${repository}/releases/latest`),
@@ -1834,11 +1838,14 @@ async function checkForUpdates(manual=false) {
   }
 }
 function downloadUpdateFile(url,destination,expectedSha256='') {
+  // Never execute a downloaded update without a verified digest from GitHub.
+  const verifiedDigest = requiredUpdateSha256(expectedSha256);
   return new Promise((resolve,reject)=>{
     const doRequest=(target,redirects=5)=>{
-      let parsed; try { parsed=new URL(target); } catch { return reject(new Error('Invalid update download URL')); }
-      const client=parsed.protocol==='http:'?http:https;
-      const req=client.get(parsed,{headers:{'User-Agent':`Aegis-Web/${APP_VERSION}`}},res=>{
+      let parsed;
+      try { parsed=trustedUpdateUrl(target); }
+      catch(error) { return reject(error); }
+      const req=https.get(parsed,{headers:{'User-Agent':`Aegis-Web/${APP_VERSION}`}},res=>{
         if ([301,302,303,307,308].includes(res.statusCode)&&res.headers.location&&redirects>0){res.resume();return doRequest(new URL(res.headers.location,parsed).href,redirects-1);}
         if (res.statusCode<200||res.statusCode>=300){res.resume();return reject(new Error(`Update download HTTP ${res.statusCode}`));}
         const total=Number(res.headers['content-length']||0); let received=0; const hash=crypto.createHash('sha256');
@@ -1846,7 +1853,7 @@ function downloadUpdateFile(url,destination,expectedSha256='') {
         const out=fs.createWriteStream(destination);
         res.on('data',chunk=>{received+=chunk.length;hash.update(chunk);try{mainWindow?.webContents.send('update:progress',{phase:'download',received,total,percent:total?Math.round(received/total*100):0});}catch{}});
         res.pipe(out);
-        out.on('finish',()=>{out.close(()=>{const digest=hash.digest('hex').toLowerCase();if(expectedSha256&&digest!==expectedSha256){try{fs.unlinkSync(destination)}catch{};return reject(new Error('SHA-256 verification failed.'));}resolve({path:destination,sha256:digest,size:received});});});
+        out.on('finish',()=>{out.close(()=>{const digest=hash.digest('hex').toLowerCase();if(digest!==verifiedDigest){try{fs.unlinkSync(destination)}catch{};return reject(new Error('SHA-256 verification failed.'));}resolve({path:destination,sha256:digest,size:received});});});
         out.on('error',reject);
       });
       req.setTimeout(30000,()=>req.destroy(new Error('Update download timeout'))); req.on('error',reject);
