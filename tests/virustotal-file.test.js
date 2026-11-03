@@ -82,7 +82,7 @@ test('VT upload URLs are restricted to HTTPS on VirusTotal domains', () => {
 
 test('multipart header cannot inject extra headers using downloaded filenames', () => {
   const value = makeUploadPrelude('boundary', 'danger"\r\nX-Header: bad');
-  assert.match(value.toString('utf8'), /filename="danger__X-Header: bad"/);
+  assert.match(value.toString('utf8'), /filename="danger___X-Header: bad"/);
   assert.equal(value.toString('utf8').includes('\r\nX-Header: bad'), false);
 });
 
