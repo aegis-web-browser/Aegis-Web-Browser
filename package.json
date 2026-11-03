@@ -1,7 +1,7 @@
 {
   "name": "aegis-web",
-  "version": "5.9.0",
-  "description": "Aegis Web 5.9.0 — secure GitHub updates, security checks and Electron patch",
+  "version": "5.9.1",
+  "description": "Aegis Web 5.9.1 — VirusTotal file lookup, consent-based scanning and secure GitHub updates",
   "main": "main.js",
   "author": "Aegis Web",
   "license": "MIT",
