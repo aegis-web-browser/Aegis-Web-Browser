@@ -1,7 +1,7 @@
 {
   "name": "aegis-web",
-  "version": "5.9.0-beta.1",
-  "description": "Aegis Web 5.9.0 beta — GitHub Releases update security and validation",
+  "version": "5.9.0",
+  "description": "Aegis Web 5.9.0 — secure GitHub updates, security checks and Electron patch",
   "main": "main.js",
   "author": "Aegis Web",
   "license": "MIT",
