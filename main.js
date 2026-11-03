@@ -1734,7 +1734,7 @@ function emitUpdateStatus(extra={}) {
   try { mainWindow?.webContents.send('update:status', updateState); } catch {}
   return updateState;
 }
-const GITHUB_BOOTSTRAP_URL = 'https://aegis-web-browser.netlify.app/github.json';
+const GITHUB_BOOTSTRAP_URL = 'https://aegis-web-browser.surge.sh/github.json';
 function normalizeGithubRepository(value) {
   let raw=String(value||'').trim();
   if (!raw) return '';
