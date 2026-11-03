@@ -1779,7 +1779,8 @@ async function resolveGithubRepository() {
       return repo;
     }
   } catch {}
-  return '';
+  // An outdated or unreachable website must not prevent Aegis from finding official releases.
+  return 'aegis-web-browser/Aegis-Web-Browser';
 }
 function versionFromGithubRelease(release) {
   const raw=String(release?.tag_name||release?.name||'').trim().replace(/^v/i,'');
