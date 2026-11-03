@@ -39,6 +39,7 @@ contextBridge.exposeInMainWorld('api', {
   createDesktopLink: payload => ipcRenderer.invoke('shortcut:createDesktopLink', payload),
   checkVirusTotal: url => ipcRenderer.invoke('virustotal:checkUrl', url),
   virusTotalFileReport: filePath => ipcRenderer.invoke('virustotal:fileReport', filePath),
+  virusTotalSubmitFile: (filePath, sha256) => ipcRenderer.invoke('virustotal:submitFile', filePath, sha256),
   passwordStatus: () => ipcRenderer.invoke('passwords:status'),
   passwordCreateVault: masterPassword => ipcRenderer.invoke('passwords:createVault', masterPassword),
   passwordUnlockVault: masterPassword => ipcRenderer.invoke('passwords:unlockVault', masterPassword),

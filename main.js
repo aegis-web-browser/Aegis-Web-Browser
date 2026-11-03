@@ -9,6 +9,7 @@ const zlib = require('zlib');
 const { spawn, execFile } = require('child_process');
 const { trustedUpdateUrl, requiredUpdateSha256 } = require('./lib/update-security');
 const { compareVersions } = require('./lib/version');
+const { checkVirusTotalFile, uploadVirusTotalFile, vtErrorMessage } = require('./lib/virustotal-file');
 
 const APP_VERSION = require('./package.json').version;
 const SUPPORT_URL = 'https://buymeacoffee.com/aegisweb';
@@ -2434,7 +2435,36 @@ ipcMain.handle('shortcut:createDesktopLink', (_event, payload) => {
   }
 });
 ipcMain.handle('virustotal:checkUrl', (_event, url) => checkUrlWithVirusTotal(url));
-ipcMain.handle('virustotal:fileReport', async (_event, filePath) => { try { const target=String(filePath||''); const stat=fs.statSync(target); if (!stat.isFile()) return {ok:false,error:'VirusTotal reports are available for files, not folders.'}; const hash=await new Promise((resolve,reject)=>{ const h=crypto.createHash('sha256'); const input=fs.createReadStream(target); input.on('data',d=>h.update(d)); input.on('end',()=>resolve(h.digest('hex'))); input.on('error',reject); }); return {ok:true,sha256:hash,reportUrl:`https://www.virustotal.com/gui/file/${hash}`}; } catch(error) { return {ok:false,error:String(error?.message||error)}; } });
+ipcMain.handle('virustotal:fileReport', async (event, filePath) => {
+  if (!mainWindow || event.sender.id !== mainWindow.webContents.id) return { ok:false, error:'Action non autorisée.' };
+  try {
+    return await checkVirusTotalFile(filePath, store?.settings?.virusTotalApiKey || '', virusTotalApiRequest);
+  } catch (error) {
+    return { ok:false, error:vtErrorMessage(error) };
+  }
+});
+ipcMain.handle('virustotal:submitFile', async (event, filePath, expectedSha256) => {
+  if (!mainWindow || event.sender.id !== mainWindow.webContents.id) return { ok:false, error:'Action non autorisée.' };
+  const key = String(store?.settings?.virusTotalApiKey || '').trim();
+  if (!key) return { ok:false, error:'Ajoutez une clé API VirusTotal dans Paramètres pour proposer un envoi automatique.' };
+  const filename = path.basename(String(filePath || ''));
+  const consent = await dialog.showMessageBox(mainWindow, {
+    type: 'warning',
+    title: 'Confirmer l’envoi à VirusTotal',
+    message: `Envoyer « ${filename} » à VirusTotal ?`,
+    detail: 'Le fichier complet sera transmis à VirusTotal et pourra être partagé avec sa communauté et ses partenaires. N’envoyez pas de documents privés, confidentiels ou personnels. Aucun envoi n’aura lieu sans votre accord.',
+    buttons: ['Annuler', 'Envoyer le fichier'],
+    defaultId: 0,
+    cancelId: 0,
+    noLink: true
+  });
+  if (consent.response !== 1) return { ok:false, cancelled:true };
+  try {
+    return await uploadVirusTotalFile(filePath, expectedSha256, key, virusTotalApiRequest);
+  } catch (error) {
+    return { ok:false, error:vtErrorMessage(error) };
+  }
+});
 ipcMain.handle('passwords:status', () => ({ ok: true, available: true, exists: vaultExists(), unlocked: vaultUnlocked(), count: vaultUnlocked() ? vaultEntries.length : null }));
 ipcMain.handle('passwords:createVault', (_event, masterPassword) => {
   try { return createPasswordVault(masterPassword); } catch (error) { return { ok: false, error: error.message || 'Création impossible.' }; }

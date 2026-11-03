@@ -37,7 +37,7 @@ jobs:
       - name: Install development dependencies
         run: npm install --no-audit --no-fund
       - name: Build Windows installer
-        run: npm run build
+        run: npm run build -- --publish never
       - name: Upload preview artifact for testers only
         uses: actions/upload-artifact@v4
         with:
