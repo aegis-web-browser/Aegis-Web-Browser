@@ -37,7 +37,7 @@ jobs:
       - name: Unit tests
         run: npm test
       - name: Build stable Windows installer
-        run: npm run build
+        run: npm run build -- --publish never
       - name: Prepare stable asset and SHA-256 file
         shell: pwsh
         run: |
