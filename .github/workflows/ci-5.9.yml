@@ -1,0 +1,47 @@
+name: Aegis Web 5.9 - source and Windows preview checks
+
+on:
+  push:
+    branches: ['feature/5.9.0-foundation']
+  pull_request:
+    branches: ['main']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-checks:
+    name: Source syntax and security helper tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JavaScript syntax
+        run: npm run lint:syntax
+      - name: Run unit tests
+        run: npm test
+
+  windows-preview:
+    name: Package Windows preview (not a public release)
+    needs: source-checks
+    if: github.event_name == 'pull_request'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install development dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build Windows installer
+        run: npm run build
+      - name: Upload preview artifact for testers only
+        uses: actions/upload-artifact@v4
+        with:
+          name: aegis-web-windows-preview-not-release
+          path: dist/*.exe
+          if-no-files-found: error
+          retention-days: 7
