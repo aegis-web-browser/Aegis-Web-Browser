@@ -1585,12 +1585,46 @@ async function completeFirstRun(useRecommended = false) {
 }
 async function openDownloadVirusTotal(download) {
   if (!download?.path || !download?.done || download?.state !== 'completed') return;
-  showToast(uiMessage('Calculating SHA-256…','Calcul du SHA-256…'));
-  const result = await window.api.virusTotalFileReport(download.path);
-  if (!result?.ok || !result?.reportUrl) return showToast(result?.error || uiMessage('Unable to open VirusTotal report.','Impossible d’ouvrir le rapport VirusTotal.'));
-  createTab(result.reportUrl);
-  closeDownloadsPopover();
-  showToast(uiMessage('Opening VirusTotal hash report.','Ouverture du rapport VirusTotal par empreinte.'));
+  showToast(uiMessage('Checking SHA-256 against VirusTotal…', 'Vérification du SHA-256 auprès de VirusTotal…'));
+  let result;
+  try {
+    result = await window.api.virusTotalFileReport(download.path);
+  } catch (error) {
+    return showToast(uiMessage('VirusTotal unavailable: ', 'VirusTotal indisponible : ') + String(error?.message || error));
+  }
+  if (!result?.ok) {
+    return showToast(result?.error || uiMessage('Unable to check this file.', 'Impossible de vérifier ce fichier.'));
+  }
+  if (result.mode === 'known' && result.reportUrl) {
+    const positives = Number(result.stats?.malicious || 0) + Number(result.stats?.suspicious || 0);
+    createTab(result.reportUrl);
+    closeDownloadsPopover();
+    showToast(positives > 0
+      ? uiMessage(`VirusTotal: ${positives} detection(s) or warnings. Review the report.`, `VirusTotal : ${positives} détection(s) ou avertissement(s). Consultez le rapport.`)
+      : uiMessage('VirusTotal report found. Zero detections does not guarantee safety.', 'Rapport VirusTotal trouvé. Aucune détection ne garantit pas l’innocuité.'));
+    return;
+  }
+  if (result.mode === 'needs-key') {
+    createTab(result.manualUploadUrl || 'https://www.virustotal.com/gui/home/upload');
+    closeDownloadsPopover();
+    showToast(uiMessage('No VT API key: upload the file manually if you wish. Nothing was sent.', 'Sans clé API VT : importez le fichier manuellement si vous le souhaitez. Rien n’a été envoyé.'));
+    return;
+  }
+  if (result.mode === 'unknown') {
+    showToast(uiMessage('File not found in VirusTotal. Confirm a submission if you wish.', 'Fichier inconnu de VirusTotal. Confirmez l’envoi si vous le souhaitez.'));
+    let submitted;
+    try {
+      submitted = await window.api.virusTotalSubmitFile(download.path, result.sha256);
+    } catch (error) {
+      return showToast(uiMessage('VirusTotal submission failed: ', 'Échec de l’envoi VirusTotal : ') + String(error?.message || error));
+    }
+    if (submitted?.cancelled) return showToast(uiMessage('Submission cancelled. No file sent.', 'Envoi annulé. Aucun fichier transmis.'));
+    if (!submitted?.ok) return showToast(submitted?.error || uiMessage('Unable to submit file.', 'Impossible d’envoyer le fichier.'));
+    closeDownloadsPopover();
+    showToast(uiMessage('File submitted. Scan pending: use VT again later to view the report.', 'Fichier envoyé. Analyse en cours : utilisez de nouveau VT plus tard pour voir le rapport.'));
+    return;
+  }
+  showToast(uiMessage('VirusTotal returned an unknown status.', 'Statut VirusTotal inconnu.'));
 }
 function renderDownloadsList() {
   const container = $('downloads-list');
@@ -1604,7 +1638,7 @@ function renderDownloadsList() {
     item.style.alignItems = 'stretch';
     const pct = download.total ? Math.min(100, Math.round(download.received / download.total * 100)) : 0;
     const status = download.done ? (download.state === 'completed' ? uiMessage('Completed','Terminé') : uiMessage('Failed','Échec')) : `${pct}% · ${formatBytes(download.received)} / ${formatBytes(download.total)}`;
-    const vt = download.done && download.state === 'completed' && download.path ? `<button class="download-vt-btn" type="button" title="${uiMessage('Open VirusTotal file report','Ouvrir le rapport VirusTotal du fichier')}"><span>◇</span> VirusTotal</button>` : '';
+    const vt = download.done && download.state === 'completed' && download.path ? `<button class="download-vt-btn" type="button" title="${uiMessage('Check file with VirusTotal','Vérifier le fichier avec VirusTotal')}"><span>◇</span> VirusTotal</button>` : '';
     item.innerHTML = `<div class="download-list-head"><div class="dot"></div><div class="meta"><div class="t">${escapeHTML(download.filename)}</div><div class="u">${escapeHTML(status)}</div></div><div class="download-row-actions">${vt}${download.done&&download.path?`<button class="download-open-btn" type="button">${uiMessage('Open','Ouvrir')}</button>`:''}</div></div><div class="progress-bar"><div class="progress-fill" style="width:${download.done && download.state === 'completed' ? 100 : pct}%"></div></div>`;
     item.querySelector('.download-vt-btn')?.addEventListener('click', event => { event.stopPropagation(); openDownloadVirusTotal(download); });
     item.querySelector('.download-open-btn')?.addEventListener('click', event => { event.stopPropagation(); window.api.showItem(download.path); });
