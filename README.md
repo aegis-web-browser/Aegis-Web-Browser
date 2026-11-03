@@ -6,9 +6,15 @@ Aegis Web est un navigateur de bureau basé sur **Electron / Chromium**, avec de
 
 Aegis Web is an **Electron / Chromium** desktop browser combining everyday browsing with integrated privacy and productivity tools.
 
-**Version décrite / Documented version:** `5.8.5.1` · **Code source public / Public application source** · [Télécharger / Download](https://github.com/aegis-web-browser/Aegis-Web-Browser/releases/latest)
+**Version Windows / Windows release:** `5.9.0` · **macOS:** `5.8.5.1` · **Code source public / Public source** · [Télécharger / Download](https://github.com/aegis-web-browser/Aegis-Web-Browser/releases/latest)
 
 ---
+
+## 📦 Dernière version / Latest release
+
+**Windows 5.9.0** : [télécharger / download](https://github.com/aegis-web-browser/Aegis-Web-Browser/releases/tag/5.9.0) · [notes de version bilingues / bilingual release notes](RELEASE-NOTES-5.9.0.md)
+
+**macOS 5.8.5.1** : [version précédente / previous version](https://github.com/aegis-web-browser/Aegis-Web-Browser/releases/tag/5.8.5.1). **Aucune version macOS 5.9.0 validée / No validated macOS 5.9.0 build.**
 
 ## 🇫🇷 Français
 
@@ -33,7 +39,7 @@ Aegis Web réunit la navigation par onglets, la personnalisation de l'interface 
 
 ### Télécharger et essayer le projet
 
-Les versions Windows et macOS sont disponibles dans les [Releases GitHub](https://github.com/aegis-web-browser/Aegis-Web-Browser/releases/latest). Pour lancer **le code source** avec Node.js/npm :
+Les versions Windows (5.9.0) et macOS (5.8.5.1) sont disponibles dans les [Releases GitHub](https://github.com/aegis-web-browser/Aegis-Web-Browser/releases/latest). Pour lancer **le code source** avec Node.js/npm :
 
 ```bash
 npm install
@@ -75,7 +81,7 @@ Aegis Web brings together tabbed browsing, interface customization and built-in 
 
 ### Download and try the source
 
-Windows and macOS downloads are available under [GitHub Releases](https://github.com/aegis-web-browser/Aegis-Web-Browser/releases/latest). To run **the source code** with Node.js/npm:
+Windows (5.9.0) and macOS (5.8.5.1) downloads are available under [GitHub Releases](https://github.com/aegis-web-browser/Aegis-Web-Browser/releases/latest). To run **the source code** with Node.js/npm:
 
 ```bash
 npm install

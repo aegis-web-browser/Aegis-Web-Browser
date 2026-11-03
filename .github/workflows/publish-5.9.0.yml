@@ -1,0 +1,59 @@
+name: Publish Aegis Web 5.9.0 Windows stable
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-5.9.0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: aegis-5.9.0-stable-release
+  cancel-in-progress: false
+
+jobs:
+  publish-windows:
+    if: github.repository == 'aegis-web-browser/Aegis-Web-Browser'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify stable version
+        shell: pwsh
+        run: |
+          $p = Get-Content package.json -Raw | ConvertFrom-Json
+          if ($p.version -ne '5.9.0') { throw "Refusing to publish version $($p.version)" }
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Verify syntax
+        run: npm run lint:syntax
+      - name: Unit tests
+        run: npm test
+      - name: Build stable Windows installer
+        run: npm run build
+      - name: Prepare stable asset and SHA-256 file
+        shell: pwsh
+        run: |
+          $source = Join-Path 'dist' 'Aegis-Web-Setup-5.9.0.exe'
+          $target = Join-Path 'dist' 'Aegis-Web-Setup-Windows.exe'
+          if (!(Test-Path -LiteralPath $source)) { throw "Installer not produced: $source" }
+          Move-Item -LiteralPath $source -Destination $target -Force
+          $digest = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$digest  Aegis-Web-Setup-Windows.exe" | Set-Content -LiteralPath 'dist/SHA256SUMS.txt' -Encoding ascii
+          Write-Host "SHA-256: $digest"
+      - name: Publish official Windows GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view 5.9.0 -R $env:GITHUB_REPOSITORY --json tagName *> $null
+          if ($LASTEXITCODE -eq 0) { Write-Host "Release 5.9.0 already exists: refusing to overwrite assets"; exit 0 }
+          gh release create 5.9.0 "dist/Aegis-Web-Setup-Windows.exe" "dist/SHA256SUMS.txt" --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "Aegis Web 5.9.0 — Windows" --notes-file "RELEASE-NOTES-5.9.0.md" --latest
+          if ($LASTEXITCODE -ne 0) { throw "GitHub Release publication failed" }
