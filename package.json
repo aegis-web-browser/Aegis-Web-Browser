@@ -1,7 +1,7 @@
 {
   "name": "aegis-web",
-  "version": "5.8.5.1",
-  "description": "Aegis Web 5.8.5.1 — GitHub Releases updates, PDF Studio et Aegis Cast",
+  "version": "5.9.0-beta.1",
+  "description": "Aegis Web 5.9.0 beta — GitHub Releases update security and validation",
   "main": "main.js",
   "author": "Aegis Web",
   "license": "MIT",
@@ -19,7 +19,7 @@
   "build": {
     "appId": "com.aegisweb.browser.clean531",
     "productName": "Aegis Web",
-    "artifactName": "Aegis-Web-Setup-5.8.5.1.${ext}",
+    "artifactName": "Aegis-Web-Setup-${version}.${ext}",
     "directories": {
       "output": "dist",
       "buildResources": "build"
