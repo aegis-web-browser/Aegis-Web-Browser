@@ -1,5 +1,11 @@
 # Aegis Web 5.9.0 — Windows stable / Version Windows stable
 
+**🌐 Site officiel / Official website:** https://aegis-web-browser.surge.sh/
+
+**FR :** L'ancienne adresse `https://aegis-web-browser.netlify.app/` est obsolète. Merci de ne plus l'utiliser.
+
+**EN:** The previous Netlify website is outdated and is no longer the official Aegis Web site.
+
 ## 🇫🇷 Français
 
 **Aegis Web 5.9.0** est la version stable Windows issue des tests de la bêta 5.9.0. Cette version consolide la sécurité des mises à jour GitHub et les contrôles automatisés.
