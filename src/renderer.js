@@ -220,6 +220,9 @@ function clearBrowserError(tab = getActiveTab()) {
   }
   $('error-page')?.classList.remove('show');
   $('error-page')?.setAttribute('aria-hidden', 'true');
+  $('error-page')?.classList.remove('offline-mode');
+  if ($('offline-run')) $('offline-run').hidden = true;
+  window.AegisOfflineRun?.setVisible(false);
 }
 function scheduleBrowserError(tab, failure, delay = 1600) {
   if (!tab || tab.internalStart) return;
@@ -255,6 +258,10 @@ function showBrowserError(tab) {
   panel?.setAttribute('aria-hidden', 'false');
   $('error-page-text').textContent = tab.error.description || 'La page n’a pas pu être chargée.';
   $('error-page-url').textContent = tab.error.url || '';
+  const networkFailure = Boolean(window.AegisOfflineRun?.isNetworkError(tab.error.code, navigator.onLine === false));
+  if ($('offline-run')) $('offline-run').hidden = !networkFailure;
+  panel?.classList.toggle('offline-mode', networkFailure);
+  window.AegisOfflineRun?.setVisible(networkFailure, { privateMode: Boolean(tab.private) });
   document.body.classList.remove('start-visible');
 }
 function renderActiveSurface() {
@@ -273,6 +280,9 @@ function renderActiveSurface() {
   start?.setAttribute('aria-hidden', showStart ? 'false' : 'true');
   error?.classList.remove('show');
   error?.setAttribute('aria-hidden', 'true');
+  error?.classList.remove('offline-mode');
+  if ($('offline-run')) $('offline-run').hidden = true;
+  window.AegisOfflineRun?.setVisible(false);
   document.body.classList.toggle('start-visible', showStart);
   if (showStart) {
     setLoadingState(false);
@@ -374,6 +384,8 @@ function createTab(url, options = {}) {
       clearPendingNavigationFailure(tabState);
     }
     if (id === activeTabId && !tabState.internalStart) {
+      window.AegisOfflineRun?.setVisible(false);
+      if ($('offline-run')) $('offline-run').hidden = true;
       $reloadBtn.textContent = '×';
       setLoadingState(true);
       $('error-page')?.classList.remove('show');
