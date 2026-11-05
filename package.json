@@ -1,7 +1,7 @@
 {
   "name": "aegis-web",
-  "version": "5.9.2-beta.2",
-  "description": "Aegis Web 5.9.2 beta — offline games, P2P moderated chat, Focus and Deals",
+  "version": "5.9.2-beta.3",
+  "description": "Aegis Web 5.9.2 beta 3 — separate Focus/Arcade/Chat rooms, Aegis Start daily discovery",
   "main": "main.js",
   "author": "Aegis Web",
   "license": "MIT",
@@ -10,7 +10,7 @@
     "build": "electron-builder --win nsis --x64",
     "build:dir": "electron-builder --win dir --x64",
     "test": "node --test tests/*.test.js",
-    "lint:syntax": "node --check main.js && node --check preload.js && node --check webview-preload.js && node --check pdf-preload.js && node --check src/renderer.js && node --check src/aegis-tools.js && node --check src/pdf-studio.js && node --check lib/update-security.js && node --check lib/version.js && node --check lib/virustotal-file.js && node --check src/offline-run.js && node --check src/aegis-chat-safety.js && node --check src/aegis-chat.js && node --check src/aegis-hub.js"
+    "lint:syntax": "node --check main.js && node --check preload.js && node --check webview-preload.js && node --check pdf-preload.js && node --check src/renderer.js && node --check src/aegis-tools.js && node --check src/pdf-studio.js && node --check lib/update-security.js && node --check lib/version.js && node --check lib/virustotal-file.js && node --check src/offline-run.js && node --check src/aegis-chat-safety.js && node --check src/aegis-chat-rooms.js && node --check src/aegis-features.js"
   },
   "devDependencies": {
     "electron": "44.10.1",
