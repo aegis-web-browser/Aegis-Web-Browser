@@ -220,6 +220,9 @@ function clearBrowserError(tab = getActiveTab()) {
   }
   $('error-page')?.classList.remove('show');
   $('error-page')?.setAttribute('aria-hidden', 'true');
+  $('error-page')?.classList.remove('offline-mode');
+  if ($('offline-run')) $('offline-run').hidden = true;
+  window.AegisOfflineRun?.setVisible(false);
 }
 function scheduleBrowserError(tab, failure, delay = 1600) {
   if (!tab || tab.internalStart) return;
@@ -255,6 +258,10 @@ function showBrowserError(tab) {
   panel?.setAttribute('aria-hidden', 'false');
   $('error-page-text').textContent = tab.error.description || 'La page n’a pas pu être chargée.';
   $('error-page-url').textContent = tab.error.url || '';
+  const networkFailure = Boolean(window.AegisOfflineRun?.isNetworkError(tab.error.code, navigator.onLine === false));
+  if ($('offline-run')) $('offline-run').hidden = !networkFailure;
+  panel?.classList.toggle('offline-mode', networkFailure);
+  window.AegisOfflineRun?.setVisible(networkFailure, { privateMode: Boolean(tab.private) });
   document.body.classList.remove('start-visible');
 }
 function renderActiveSurface() {
@@ -273,6 +280,9 @@ function renderActiveSurface() {
   start?.setAttribute('aria-hidden', showStart ? 'false' : 'true');
   error?.classList.remove('show');
   error?.setAttribute('aria-hidden', 'true');
+  error?.classList.remove('offline-mode');
+  if ($('offline-run')) $('offline-run').hidden = true;
+  window.AegisOfflineRun?.setVisible(false);
   document.body.classList.toggle('start-visible', showStart);
   if (showStart) {
     setLoadingState(false);
@@ -301,7 +311,7 @@ function activateStartPage(tab = getActiveTab()) {
   if (tab.id === activeTabId) {
     $addressBar.value = '';
     if ($('start-search-input')) $('start-search-input').value = '';
-    document.title = 'Aegis Start — Aegis Web 5.9.1';
+    document.title = 'Aegis Start — Aegis Web 5.9.2-beta.1';
     renderActiveSurface();
     updateNavButtons();
     updateConnectionInfo();
@@ -374,6 +384,8 @@ function createTab(url, options = {}) {
       clearPendingNavigationFailure(tabState);
     }
     if (id === activeTabId && !tabState.internalStart) {
+      window.AegisOfflineRun?.setVisible(false);
+      if ($('offline-run')) $('offline-run').hidden = true;
       $reloadBtn.textContent = '×';
       setLoadingState(true);
       $('error-page')?.classList.remove('show');
@@ -2631,14 +2643,14 @@ $('bookmarks-filter')?.addEventListener('input', renderBookmarksPanel);
 $('history-filter')?.addEventListener('input', renderHistoryPanel);
 $('clear-downloads-list')?.addEventListener('click', () => { for (const [id,item] of downloadItems) if (item.done) downloadItems.delete(id); renderDownloadsList(); showToast('Téléchargements terminés retirés de la liste.'); });
 
-let browserUpdateState = { currentVersion:'5.9.1', latestVersion:'5.9.1', available:false, status:'idle', configured:false, error:'' };
+let browserUpdateState = { currentVersion:'5.9.2-beta.1', latestVersion:'5.9.2-beta.1', available:false, status:'idle', configured:false, error:'' };
 function renderUpdateUI(state = browserUpdateState) {
   browserUpdateState = { ...browserUpdateState, ...(state || {}) };
   const btn=$('update-btn');
   const available=Boolean(browserUpdateState.available);
   btn?.classList.toggle('hidden', !available);
   if (btn) btn.textContent = available ? `MAJ ${browserUpdateState.latestVersion || ''}`.trim() : 'MAJ';
-  const badge=$('update-current-version'); if (badge) badge.textContent = `Aegis Web ${browserUpdateState.currentVersion || '5.9.1'}`;
+  const badge=$('update-current-version'); if (badge) badge.textContent = `Aegis Web ${browserUpdateState.currentVersion || '5.9.2-beta.1'}`;
   const title=$('update-title'), copy=$('update-copy'), action=$('update-action'), install=$('update-install'), progress=$('update-progress'), bar=$('update-progress-bar');
   if (!title || !copy) return;
   const st=browserUpdateState.status;
