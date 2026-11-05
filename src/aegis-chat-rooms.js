@@ -46,7 +46,7 @@
       const title=document.createElement('b');title.textContent=meta[1];
       const sub=document.createElement('small');sub.textContent=meta[2];
       info.append(title,sub);
-      const count=document.createElement('em');count.textContent=Number(peerCount[id]||0)+' / 8';
+      const count=document.createElement('em');count.textContent=(room===id?label('Connecté','Joined'):label('Rejoindre','Join'))+' · '+Number(peerCount[id]||0)+'/8';
       button.append(symbol,info,count);
       button.addEventListener('click',()=>join(id));
       list.appendChild(button);
@@ -172,7 +172,8 @@
     if(!Object.hasOwn(ROOM_NAMES,id))return;
     const url=validEndpoint($('aegis-chat-server').value.trim()||stored());
     if(!url){
-      state('Configure un serveur de signalisation WSS pour rejoindre les salons.','Configure a WSS signaling server to join public rooms.');
+      state('Le service des salons doit être configuré pour se connecter.','The room service must be configured before joining.');
+      $('aegis-chat-advanced').open=true;
       $('aegis-chat-server').focus();return;
     }
     disconnect();room=id;endpoint=url;
@@ -221,7 +222,7 @@
       const packet=JSON.stringify({v:1,kind:'text',room,name,text:approved});
       let sent=0;
       for(const peer of peers.values())if(peer.channel?.readyState==='open'&&peer.channel.bufferedAmount<8192){peer.channel.send(packet);sent++;}
-      if(sent){append(name,approved,'me');$('aegis-chat-input').value='';state(label('Envoyé à ','Sent to ')+sent+label(' participant(s).',' peer(s).'),'');}
+      if(sent){append(name,approved,'me');$('aegis-chat-input').value='';state('Envoyé à '+sent+' participant(s).','Sent to '+sent+' peer(s).');}
       else state('Aucun participant P2P connecté.','No P2P peers connected.');
     }finally{busy=false;updatePeers();}
   }
