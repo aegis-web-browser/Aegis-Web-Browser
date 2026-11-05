@@ -144,12 +144,22 @@
     $('offline-run-level').textContent = String(state.level);
     const status = $('offline-run-status');
     const play = $('offline-run-start');
-    const labels = {
+    const french = document.documentElement.lang.toLowerCase().startsWith('fr');
+    const labels = french ? {
       ready: ['Prêt pour le décollage ?', 'Jouer'],
       running: ['Saute les obstacles, esquive les drones et attrape les étoiles.', 'Pause'],
       paused: ['En pause · prêt à reprendre', 'Reprendre'],
       over: ['Partie terminée · retente ta chance !', 'Rejouer']
+    } : {
+      ready: ['Ready for take-off?', 'Play'],
+      running: ['Jump over spikes, duck under drones and collect stars.', 'Pause'],
+      paused: ['Paused · ready to continue', 'Resume'],
+      over: ['Game over · try again!', 'Play again']
     };
+    $('offline-run-subtitle').textContent = french ? 'Mini-jeu hors connexion' : 'Offline mini-game';
+    $('offline-run-help').textContent = french
+      ? 'Espace ou ↑ : sauter · ↓ : glisser · P : pause · Clique sur le jeu pour sauter. Aucun réseau nécessaire.'
+      : 'Space or ↑: jump · ↓: duck · P: pause · Click the game to jump. No Internet needed.';
     const [message, button] = labels[state.mode];
     status.textContent = message;
     play.textContent = button;
@@ -253,9 +263,10 @@
       ctx.fillStyle = light ? '#1e4658' : '#effffa';
       ctx.font = 'bold 22px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(state.mode === 'over' ? 'FIN DE PARTIE' : state.mode === 'paused' ? 'PAUSE' : 'AEGIS RUN', WIDTH / 2, 104);
+      const french = document.documentElement.lang.toLowerCase().startsWith('fr');
+      ctx.fillText(state.mode === 'over' ? (french ? 'FIN DE PARTIE' : 'GAME OVER') : state.mode === 'paused' ? 'PAUSE' : 'AEGIS RUN', WIDTH / 2, 104);
       ctx.font = '13px system-ui, sans-serif';
-      ctx.fillText('ESPACE / ↑ : sauter   •   ↓ : glisser   •   P : pause', WIDTH / 2, 130);
+      ctx.fillText(french ? 'ESPACE / ↑ : sauter   •   ↓ : glisser   •   P : pause' : 'SPACE / ↑ : jump   •   ↓ : duck   •   P : pause', WIDTH / 2, 130);
     }
   }
   function loop(timestamp) {
