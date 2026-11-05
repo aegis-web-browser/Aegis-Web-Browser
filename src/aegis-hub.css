@@ -89,3 +89,7 @@
   #aegis-hub .hub-chat-fields{grid-template-columns:1fr}
   #aegis-hub .hub-run-card{flex-wrap:wrap}
 }
+
+
+#aegis-hub .hub-chat-ai-row{display:flex;align-items:center;flex-wrap:wrap;gap:11px;margin:0 0 16px;color:#a9d5ca;font-size:12px}
+#aegis-hub .hub-chat-ai-row button{border-color:#347e70;background:#1e544c;color:#c6ffec}
