@@ -11,7 +11,7 @@
   const peers = new Map();
   const blocked = new Set();
   const rate = new Map();
-  let activeRoom = 'general-fr', nickname = 'Aegis', opened = false, sending = false;
+  let activeRoom = 'general-fr', nickname = 'Aegis', opened = false, sending = false, role = null;
   const MAX_PEERS = 5;
   const MAX_HISTORY = 75;
   const locale = () => document.documentElement.lang === 'fr' ? 'fr' : 'en';
@@ -57,6 +57,7 @@
   function disconnectAll() {
     for (const id of [...peers.keys()]) disconnectPeer(id);
     rate.clear();
+    role = null;
     $('hub-chat-invite').value = '';
     $('hub-chat-response').value = '';
     appendMessage('Aegis', tr('Salon réinitialisé.','Room reset.'),'system');
@@ -84,7 +85,7 @@
   }
   function peer(id) {
     const pc = new RTCPeerConnection(peerConfig());
-    const entry = {id,pc,channel:null};
+    const entry = {id,pc,channel:null,hostSide:false};
     peers.set(id,entry);
     pc.addEventListener('connectionstatechange', () => {
       refreshPeers();
@@ -120,6 +121,15 @@
       if (!result.allowed) { appendMessage('Aegis',tr('Message entrant filtré.','Incoming message filtered.'),'system'); return; }
       if (!peers.has(id) || p.channel?.readyState !== 'open') return;
       appendMessage(data.name,result.text,'peer');
+      // One browser acts as the room host: forward approved guest messages
+      // to other directly connected guests. Each recipient moderates again.
+      // Guests never forward relayed messages, preventing relay loops.
+      if (role === 'host' && p.hostSide) {
+        const relay = JSON.stringify({v:1,kind:'text',room:activeRoom,name:data.name,text:result.text});
+        for (const [otherId,other] of peers) {
+          if (otherId !== id && other.channel?.readyState === 'open' && other.channel.bufferedAmount < 4096) other.channel.send(relay);
+        }
+      }
     } catch {
       status('Modération indisponible, message refusé.','Moderation unavailable; message rejected.');
     }
@@ -142,11 +152,13 @@
     return JSON.stringify({v:1,kind,room:activeRoom,id,description:{type:description.type,sdp:description.sdp}});
   }
   async function createInvite() {
+    if (role === 'guest') return status('Un invité ne peut pas héberger : demande une invitation à l’hôte.','Guests cannot host: request an invite from the room host.');
     if (peers.size >= MAX_PEERS) return status('Salon limité à 5 connexions P2P.','5 P2P peers maximum.');
     const name=safety.validateName($('hub-chat-name').value);
     if (!name) return status('Pseudo non valide.','Invalid nickname.');
-    nickname=name; activeRoom=room();
+    nickname=name; activeRoom=room();role='host';
     const id=crypto.randomUUID(), entry=peer(id);
+    entry.hostSide=true;
     try {
       const channel=entry.pc.createDataChannel('aegis-chat-v1',{ordered:true});
       attachChannel(entry,channel);
@@ -159,13 +171,14 @@
     } catch(error) { disconnectPeer(id);status('Impossible de créer l’invitation.','Could not create invitation.'); }
   }
   async function acceptInvite() {
+    if (role === 'host' || role === 'guest') return status('Quitte le salon avant de rejoindre un autre hôte.','Leave this room before joining a different host.');
     const data=safety.signalValid($('hub-chat-paste').value,'offer');
     if (!data) return status('Invitation invalide.','Invalid invitation.');
     if (peers.size >= MAX_PEERS || peers.has(data.id)) return status('Salon saturé ou invitation déjà utilisée.','Room full or invitation already used.');
     const name=safety.validateName($('hub-chat-name').value);
     if (!name) return status('Pseudo non valide.','Invalid nickname.');
     if (data.room !== room()) $('hub-chat-room').value=data.room;
-    nickname=name;activeRoom=data.room;
+    nickname=name;activeRoom=data.room;role='guest';
     const entry=peer(data.id);
     entry.pc.addEventListener('datachannel',event=>attachChannel(entry,event.channel));
     try {
