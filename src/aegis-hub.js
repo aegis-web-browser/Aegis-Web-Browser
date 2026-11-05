@@ -32,7 +32,7 @@
     '  <div class="hub-run-card"><div><h3>🤖 Aegis Run</h3><p id="hub-run-description">Le runner avec obstacles, drones, étoiles et meilleur score.</p></div><button type="button" id="hub-run-open">Jouer à Aegis Run</button></div><div id="hub-arcade-run"></div>',
     ' </section>',
     ' <section data-hub-pane="chat" class="hub-pane"><div class="hub-section-head"><h2>Aegis Chat — P2P</h2><p id="hub-chat-intro">Salons privés FR / EN sur invitation. Sans serveur de messages ni compte. Connexion manuelle entre participants.</p></div>',
-    '  <div class="hub-warning" id="hub-chat-warning">🔒 Mode expérimental : la modération IA locale doit être installée. Tous les messages entrants et sortants sont bloqués si elle est indisponible. Aucune modération ne peut garantir une sécurité absolue.</div>',
+    '  <div class="hub-warning" id="hub-chat-warning">🔒 Mode expérimental : la modération IA locale doit être installée. Tous les messages entrants et sortants sont bloqués si elle est indisponible. Aucune modération ne peut garantir une sécurité absolue.</div><div class="hub-chat-ai-row"><button type="button" id="hub-chat-install-ai">Configurer Aegis AI local</button><span id="hub-chat-ai-status">Modèle local nécessaire pour envoyer ou recevoir des messages.</span></div>',
     '  <div class="hub-chat-fields"><label>Salon<select id="hub-chat-room"><option value="general-fr">🇫🇷 Général</option><option value="general-en">🇬🇧 General</option><option value="gaming-fr">🇫🇷 Gaming</option><option value="gaming-en">🇬🇧 Gaming</option><option value="help-fr">🇫🇷 Entraide</option><option value="help-en">🇬🇧 Help</option></select></label><label>Pseudo / Nickname<input id="hub-chat-name" maxlength="24" autocomplete="off" spellcheck="false"/></label></div>',
     '  <label class="hub-chat-stun"><input type="checkbox" id="hub-chat-stun"/><span id="hub-chat-stun-label">Autoriser un serveur STUN externe pour les connexions Internet (peut exposer des métadonnées réseau/IP aux participants et au service STUN)</span></label>',
     '  <div class="hub-chat-invitations"><div><button type="button" id="hub-chat-make">1. Créer une invitation</button><textarea id="hub-chat-invite" rows="2" readonly placeholder="Invitation à copier"></textarea><button type="button" id="hub-chat-invite-copy">Copier invitation</button></div>',
@@ -83,7 +83,7 @@
   const focusKey='aegis-hub-focus-v1';
   const focus={remaining:1500,deadline:0,running:false};
   try { const saved=JSON.parse(localStorage.getItem(focusKey)||'{}');
-    if(saved && [900,1500,2700,3600].includes(saved.remaining) && !saved.running)focus.remaining=saved.remaining;
+    if(saved && Number.isInteger(saved.remaining) && saved.remaining>=0 && saved.remaining<=3600 && !saved.running)focus.remaining=saved.remaining;
     if(saved && saved.running && Number.isFinite(saved.deadline) && saved.deadline>Date.now()-3600000 && saved.deadline<Date.now()+3600000){
       focus.running=true; focus.deadline=saved.deadline;
       focus.remaining=Math.max(0,Math.ceil((focus.deadline-Date.now())/1000));
@@ -203,6 +203,22 @@
     $('hub-run-open').textContent=text('Jeu activé ci-dessous','Game activated below');
   });
 
+  $('hub-chat-install-ai').addEventListener('click',()=>{
+    close();
+    if(typeof openPanel === 'function')openPanel('ai');
+  });
+  async function chatAiAvailability(){
+    const el=$('hub-chat-ai-status');
+    try {
+      const info=await window.api.aiStatus();
+      el.textContent=info?.installed
+        ? text('Modèle IA local installé · classification stricte active.','Local AI installed · strict classification active.')
+        : text('Modèle IA local absent : installation nécessaire.','Local AI missing: installation required.');
+    }catch{
+      el.textContent=text('État IA indisponible : chat bloqué.','AI status unavailable: chat blocked.');
+    }
+  }
+  chatAiAvailability();
   const staticText={
     'hub-focus-description':['Un minuteur local pour rester concentré. Aucune connexion nécessaire.','A local timer for focused work. Works offline.'],
     'hub-focus-length-label':['Durée de session','Session length'],
@@ -221,6 +237,7 @@
     'hub-run-open':['Jouer à Aegis Run','Play Aegis Run'],
     'hub-chat-intro':['Salons FR / EN sur invitation. Sans serveur de messages ni compte.','FR / EN invite-only rooms. No message server or account.'],
     'hub-chat-warning':['🔒 Expérimental : une IA locale installée est obligatoire pour tous les messages. Messages bloqués si IA indisponible. Aucune modération ne garantit une protection absolue.','🔒 Experimental: installed local AI is required for every message. AI unavailable = messages blocked. No filter guarantees absolute safety.'],
+    'hub-chat-install-ai':['Configurer Aegis AI local','Configure local Aegis AI'],
     'hub-chat-stun-label':['Autoriser un serveur STUN externe (les informations de réseau/IP peuvent être révélées au service et aux pairs)','Allow external STUN server (may reveal network/IP metadata to service and peers)'],
     'hub-chat-paste-label':['2. Colle une invitation OU une réponse','2. Paste an invitation OR answer'],
     'hub-chat-answer-label':['3. Réponse à renvoyer au créateur du salon','3. Reply to send back to room creator'],
