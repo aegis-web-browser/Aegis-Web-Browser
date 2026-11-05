@@ -51,6 +51,7 @@
       try { p.channel?.close(); } catch {}
       try { p.pc?.close(); } catch {}
       peers.delete(id);
+      if (peers.size === 0) role = null;
     }
     refreshPeers();
   }
