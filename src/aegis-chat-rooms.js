@@ -16,7 +16,7 @@
     'help-en':['💬','Help EN','Questions and advice']
   };
   const MAX_PEERS=7, LIMIT=6;
-  let socket=null,room=null,selfId=null,endpoint='',generation=0,busy=false,peerCount={};
+  let socket=null,lobby=null,room=null,selfId=null,endpoint='',generation=0,busy=false,peerCount={};
   const peers=new Map(), timestamps=new Map();
   const locale=()=>document.documentElement.lang.startsWith('fr')?'fr':'en';
   const label=(fr,en)=>locale()==='fr'?fr:en;
@@ -46,7 +46,7 @@
       const title=document.createElement('b');title.textContent=meta[1];
       const sub=document.createElement('small');sub.textContent=meta[2];
       info.append(title,sub);
-      const count=document.createElement('em');count.textContent=(room===id?label('Connecté','Joined'):label('Rejoindre','Join'))+' · '+Number(peerCount[id]||0)+'/8';
+      const count=document.createElement('em');count.textContent=(room===id?label('Connecté','Joined'):label('Rejoindre','Join'))+' · '+(Object.hasOwn(peerCount,id)?Number(peerCount[id]):'—')+'/8';
       button.append(symbol,info,count);
       button.addEventListener('click',()=>join(id));
       list.appendChild(button);
@@ -176,6 +176,7 @@
       $('aegis-chat-advanced').open=true;
       $('aegis-chat-server').focus();return;
     }
+    if(lobby){try{lobby.close();}catch{}lobby=null;}
     disconnect();room=id;endpoint=url;
     try{localStorage.setItem('aegis-chat-signaling-url',url);}catch{}
     $('aegis-chat-room-title').textContent=ROOM_NAMES[id][0]+' '+ROOM_NAMES[id][1];
@@ -226,6 +227,26 @@
       else state('Aucun participant P2P connecté.','No P2P peers connected.');
     }finally{busy=false;updatePeers();}
   }
+  function browse(){
+    if(room||lobby?.readyState===WebSocket.OPEN||lobby?.readyState===WebSocket.CONNECTING)return;
+    const url=validEndpoint($('aegis-chat-server').value.trim()||stored());
+    if(!url)return;
+    try{
+      lobby=new WebSocket(url);
+      const ws=lobby;
+      ws.addEventListener('message',event=>{
+        if(lobby!==ws||typeof event.data!=='string'||event.data.length>10000)return;
+        try{
+          const data=JSON.parse(event.data);
+          if((data.type==='welcome'||data.type==='counts')&&data.rooms&&typeof data.rooms==='object'){
+            peerCount=data.rooms;
+            drawRooms();
+          }
+        }catch{}
+      });
+      ws.addEventListener('close',()=>{if(lobby===ws)lobby=null;});
+    }catch{lobby=null;}
+  }
   function init(){
     const rooms=$('aegis-chat-rooms');if(!rooms)return;
     $('aegis-chat-server').value=stored();
@@ -235,15 +256,15 @@
     $('aegis-chat-input').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send();}});
     $('aegis-chat-server').addEventListener('change',()=>{
       const value=validEndpoint($('aegis-chat-server').value.trim());
-      if(value)try{localStorage.setItem('aegis-chat-signaling-url',value);}catch{}
+      if(value){try{localStorage.setItem('aegis-chat-signaling-url',value);}catch{}browse();}
     });
     $('aegis-chat-nick').value='Aegis-'+Math.floor(Math.random()*9000+1000);
     $('aegis-chat-ai').addEventListener('click',()=>{
       window.AegisFeatures?.closeChat();
       if(typeof openPanel==='function')openPanel('ai');
     });
-    window.addEventListener('beforeunload',disconnect);
-    window.AegisRooms={disconnect,join};
+    window.addEventListener('beforeunload',()=>{disconnect();if(lobby)try{lobby.close();}catch{}});
+    window.AegisRooms={disconnect,join,browse};
   }
   init();
 })();
