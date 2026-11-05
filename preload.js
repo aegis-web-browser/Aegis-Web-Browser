@@ -62,6 +62,7 @@ contextBridge.exposeInMainWorld('api', {
   aiCancelInstall: () => ipcRenderer.invoke('ai:cancelInstall'),
   aiStart: () => ipcRenderer.invoke('ai:start'),
   aiAsk: payload => ipcRenderer.invoke('ai:ask', payload || {}),
+  chatModerateLocal: text => ipcRenderer.invoke('aegisHub:moderateChat', text),
   aiStop: () => ipcRenderer.invoke('ai:stop'),
   aiRemove: () => ipcRenderer.invoke('ai:remove'),
   setContentFullscreen: (active, guestId = null) => ipcRenderer.invoke('window:setContentFullscreen', { active: Boolean(active), guestId }),
