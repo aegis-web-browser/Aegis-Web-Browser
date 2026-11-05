@@ -23,7 +23,8 @@
 ### Aegis Chat P2P FR / EN
 - Six **salons logiques privés** : Général/General, Gaming et Entraide/Help.
 - WebRTC DataChannels (transport chiffré par WebRTC). Aucune infrastructure de messagerie, de découverte publique ni de stockage serveur.
-- **Signalisation manuelle indispensable** : l'hôte crée un code d'invitation, l'invité le colle et renvoie une réponse, l'hôte confirme. Refaire cet échange pour chaque nouveau participant (jusqu'à 5 pairs dans une petite topologie maillée).
+- **Signalisation manuelle indispensable** : l'hôte crée un code d'invitation, l'invité le colle et renvoie une réponse, l'hôte confirme. Refaire cet échange pour chaque nouveau participant (jusqu'à 5 invités connectés directement à l'hôte ; ce dernier relaie les messages validés aux autres participants).
+- **Le salon dépend de son hôte** : les messages des invités sont redistribués par le navigateur de l'hôte, sans serveur central. Les invités n'ont pas de lien direct entre eux. Si l'hôte se déconnecte, le salon s'arrête. Les pseudos ne sont pas des identités certifiées.
 - Aucune garantie de connectivité Internet : en NAT/firewall restrictif, un **relais TURN** peut être nécessaire. STUN facultatif avec consentement explicite, et des adresses IP/métadonnées réseau peuvent être révélées.
 - **Filtres stricts sur chaque message envoyé et reçu :** validation des types et tailles, schéma JSON fermé, interdiction des URL, HTML, balisage et pièces jointes, blocage lexical FR/EN des insultes et termes explicites, limitation de débit, puis classification par le **moteur Aegis AI installé localement**. Les messages sont refusés si l'IA est absente, indisponible ou donne un résultat ambigu (fail-closed). **Aucun texte de chat n'est transmis à l'IA cloud configurée dans Aegis AI.**
 - Les messages sont ajoutés à l'interface via `textContent` et ne sont jamais traités comme HTML/Markdown/JavaScript ; pas de chargement d'images/fichiers ni d'exécution du contenu reçu.
