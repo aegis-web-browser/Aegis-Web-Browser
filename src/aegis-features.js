@@ -67,6 +67,7 @@
     active=name;views[name].hidden=false;
     document.body.classList.add('aegis-feature-open');
     localize();
+    if(name==='chat')window.AegisRooms?.browse();
   }
   function addToolbar(name,title,icon){
     const button=document.createElement('button');
