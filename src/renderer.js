@@ -311,7 +311,7 @@ function activateStartPage(tab = getActiveTab()) {
   if (tab.id === activeTabId) {
     $addressBar.value = '';
     if ($('start-search-input')) $('start-search-input').value = '';
-    document.title = 'Aegis Start — Aegis Web 5.9.2-beta.2';
+    document.title = 'Aegis Start — Aegis Web 5.9.2-beta.3';
     renderActiveSurface();
     updateNavButtons();
     updateConnectionInfo();
@@ -2643,14 +2643,14 @@ $('bookmarks-filter')?.addEventListener('input', renderBookmarksPanel);
 $('history-filter')?.addEventListener('input', renderHistoryPanel);
 $('clear-downloads-list')?.addEventListener('click', () => { for (const [id,item] of downloadItems) if (item.done) downloadItems.delete(id); renderDownloadsList(); showToast('Téléchargements terminés retirés de la liste.'); });
 
-let browserUpdateState = { currentVersion:'5.9.2-beta.2', latestVersion:'5.9.2-beta.2', available:false, status:'idle', configured:false, error:'' };
+let browserUpdateState = { currentVersion:'5.9.2-beta.3', latestVersion:'5.9.2-beta.3', available:false, status:'idle', configured:false, error:'' };
 function renderUpdateUI(state = browserUpdateState) {
   browserUpdateState = { ...browserUpdateState, ...(state || {}) };
   const btn=$('update-btn');
   const available=Boolean(browserUpdateState.available);
   btn?.classList.toggle('hidden', !available);
   if (btn) btn.textContent = available ? `MAJ ${browserUpdateState.latestVersion || ''}`.trim() : 'MAJ';
-  const badge=$('update-current-version'); if (badge) badge.textContent = `Aegis Web ${browserUpdateState.currentVersion || '5.9.2-beta.2'}`;
+  const badge=$('update-current-version'); if (badge) badge.textContent = `Aegis Web ${browserUpdateState.currentVersion || '5.9.2-beta.3'}`;
   const title=$('update-title'), copy=$('update-copy'), action=$('update-action'), install=$('update-install'), progress=$('update-progress'), bar=$('update-progress-bar');
   if (!title || !copy) return;
   const st=browserUpdateState.status;
