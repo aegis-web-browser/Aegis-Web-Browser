@@ -237,7 +237,27 @@
     'aegis-deal-warning':['Source officielle · disponibilité à vérifier, aucune offre garantie.','Official source · verify availability; no offer guaranteed.'],
     'aegis-deal-visit':['Découvrir ↗','Explore ↗']
   };
-  function localize(){for(const [id,pair] of Object.entries(labels)){const el=$(id);if(el)el.textContent=en()?pair[1]:pair[0];}paintTimer();}
+  function localize(){
+    for(const [id,pair] of Object.entries(labels)){
+      const el=$(id);if(el)el.textContent=en()?pair[1]:pair[0];
+    }
+    const title=$('aegis-chat-room-title');
+    if(title&&['Choisis un salon','Choose a room'].includes(title.textContent))title.textContent=tr('Choisis un salon','Choose a room');
+    const empty=$('aegis-chat-empty');
+    if(empty)empty.textContent=tr('Choisis un salon dans la liste pour commencer.','Choose a room from the list to get started.');
+    $('aegis-chat-nick').placeholder=tr('Pseudo','Nickname');
+    $('aegis-chat-input').placeholder=tr('Ton message…','Your message…');
+    const info=$('aegis-chat-status');
+    if(info&&['Service de signalisation non configuré.','Signaling server not configured.'].includes(info.textContent))info.textContent=tr('Service de signalisation non configuré.','Signaling server not configured.');
+    $('aegis-deal-detail').textContent=en() ? ({
+      'Epic Games · Free Games':'Browse free games on the official Epic Games store.',
+      'itch.io · Free Games':'Discover free independent games on itch.io.',
+      'Steam · Free to Play':'Explore free-to-play titles on Steam.',
+      'GOG · Free Games':'Browse currently free games on GOG.',
+      'GitHub · Open Source':'Discover open-source tools and check their licenses.'
+    }[deal.title]||deal.description) : deal.description;
+    paintTimer();
+  }
   window.AegisFeatures={openFocus:()=>open('focus'),openArcade:()=>open('arcade'),openChat:()=>open('chat'),closeChat:()=>close('chat'),close};
   localize();
 })();
