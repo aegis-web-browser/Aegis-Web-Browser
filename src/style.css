@@ -458,7 +458,7 @@ body.light .start-brand{color:var(--text)}
 
 /* Aegis Run — original local mini-game shown only for network failures. */
 .browser-error{overflow-y:auto}
-.browser-error.offline-mode{padding:16px}
+.browser-error.offline-mode{padding:16px;align-items:safe center}
 .browser-error.offline-mode .browser-error-card{width:min(860px,100%);padding:20px 24px}
 .browser-error.offline-mode .browser-error-icon{width:35px;height:35px;margin:0 auto 7px;border-radius:10px;font-size:18px}
 .browser-error.offline-mode .browser-error-card h2{font-size:18px;margin:4px 0}
