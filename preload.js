@@ -1,6 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('api', {
   getStore: () => ipcRenderer.invoke('store:get'),
+  liveDailyDeal: () => ipcRenderer.invoke('deals:getToday'),
+  networkProbe: () => ipcRenderer.invoke('network:probe'),
   openPdfStudio: () => ipcRenderer.invoke('pdf:launch'),
   castStatus: () => ipcRenderer.invoke('cast:status'),
   startCast: payload => ipcRenderer.invoke('cast:start', payload || {}),
