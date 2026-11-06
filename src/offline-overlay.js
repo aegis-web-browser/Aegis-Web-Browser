@@ -59,7 +59,8 @@
     $('aegis-game-slot').appendChild(game);
     root.hidden=false;
     document.body.classList.add('aegis-game-open');
-    window.AegisOfflineRun?.setVisible(true,{privateMode:false});
+    const privateMode=typeof getActiveTab==='function'&&Boolean(getActiveTab()?.private);
+    window.AegisOfflineRun?.setVisible(true,{privateMode});
     updateTitles();
     const canvas=document.getElementById('offline-run-canvas');
     canvas?.setAttribute('tabindex','0');
@@ -80,6 +81,8 @@
     if(!wasOffline){dismissedForOutage=false;wasOffline=true;}
     offline=true;
     updateTitles();
+    // Keep first-run onboarding accessible even when Windows has no network.
+    if(document.getElementById('first-run')?.classList.contains('open'))return;
     if(!dismissedForOutage)show('offline');
   }
   function onOnline(){
