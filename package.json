@@ -1,7 +1,7 @@
 {
   "name": "aegis-web",
   "version": "5.9.2-beta.5",
-  "description": "Aegis Web 5.9.2 beta 5 — fix Start page overlay on websites",
+  "description": "Aegis Web 5.9.2 beta 5 — correct start page navigation visibility; real deals, offline runner, parental controls",
   "main": "main.js",
   "author": "Aegis Web",
   "license": "MIT",
