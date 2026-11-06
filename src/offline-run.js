@@ -110,7 +110,10 @@
     return state;
   }
 
-  const api = { WIDTH, HEIGHT, GROUND, isNetworkError, createState, start, jump, duck, step, playerBounds };
+  function ignoresGameKeyTarget(target) {
+    return Boolean(target?.closest?.('input, textarea, select, [contenteditable="true"]'));
+  }
+  const api = { WIDTH, HEIGHT, GROUND, isNetworkError, createState, start, jump, duck, step, playerBounds, ignoresGameKeyTarget };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof document === 'undefined') return;
 
@@ -314,7 +317,7 @@
     if (!visible || root.hidden || event.altKey || event.ctrlKey || event.metaKey) return;
     // A previously clicked Play/Jump button keeps keyboard focus. Button focus
     // must NOT suppress Space/Up/Down (and Space must not click Play again).
-    if (event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+    if (ignoresGameKeyTarget(event.target)) return;
     if (['Space', 'ArrowUp', 'KeyW'].includes(event.code)) {
       event.preventDefault();
       if (!event.repeat) jump(state);
