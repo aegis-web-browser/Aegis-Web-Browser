@@ -2363,15 +2363,22 @@ ipcMain.handle('store:clearHistory', () => {
 
 let liveDealCache=null;
 let liveDealCacheAt=0;
+let liveDealCacheDay='';
 let pendingLiveDeals=null;
+function liveOfferParisDay(now=Date.now()){
+  return new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(now));
+}
 ipcMain.handle('deals:getToday', async event => {
   if (!mainWindow || event.sender.id !== mainWindow.webContents.id) return {ok:false,offer:null,error:'unauthorized'};
-  const now=Date.now();
-  if(liveDealCache && now-liveDealCacheAt<60*60*1000) return liveDealCache;
+  const now=Date.now(),day=liveOfferParisDay(now);
+  // Never reuse yesterday's pick and retry failed feeds promptly after reconnection.
+  const ttl=liveDealCache?.ok?60*60*1000:15000;
+  if(liveDealCache && liveDealCacheDay===day && now-liveDealCacheAt<ttl) return liveDealCache;
   if(!pendingLiveDeals) {
     pendingLiveDeals=getLiveDailyOffer().then(result=>{
       liveDealCache=result;
       liveDealCacheAt=Date.now();
+      liveDealCacheDay=liveOfferParisDay(liveDealCacheAt);
       return result;
     }).finally(()=>{pendingLiveDeals=null;});
   }
