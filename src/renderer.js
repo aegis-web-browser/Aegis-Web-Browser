@@ -221,8 +221,10 @@ function clearBrowserError(tab = getActiveTab()) {
   $('error-page')?.classList.remove('show');
   $('error-page')?.setAttribute('aria-hidden', 'true');
   $('error-page')?.classList.remove('offline-mode');
-  if ($('offline-run')) $('offline-run').hidden = true;
-  window.AegisOfflineRun?.setVisible(false);
+  if (!window.AegisRunOverlay?.isOpen()) {
+    if ($('offline-run')) $('offline-run').hidden = true;
+    window.AegisOfflineRun?.setVisible(false);
+  }
 }
 function scheduleBrowserError(tab, failure, delay = 1600) {
   if (!tab || tab.internalStart) return;
@@ -259,9 +261,11 @@ function showBrowserError(tab) {
   $('error-page-text').textContent = tab.error.description || 'La page n’a pas pu être chargée.';
   $('error-page-url').textContent = tab.error.url || '';
   const networkFailure = Boolean(window.AegisOfflineRun?.isNetworkError(tab.error.code, navigator.onLine === false));
-  if ($('offline-run')) $('offline-run').hidden = !networkFailure;
+  if (!window.AegisRunOverlay?.isOpen()) {
+    if ($('offline-run')) $('offline-run').hidden = !networkFailure;
+    window.AegisOfflineRun?.setVisible(networkFailure, { privateMode: Boolean(tab.private) });
+  }
   panel?.classList.toggle('offline-mode', networkFailure);
-  window.AegisOfflineRun?.setVisible(networkFailure, { privateMode: Boolean(tab.private) });
   document.body.classList.remove('start-visible');
 }
 function renderActiveSurface() {
@@ -281,8 +285,10 @@ function renderActiveSurface() {
   error?.classList.remove('show');
   error?.setAttribute('aria-hidden', 'true');
   error?.classList.remove('offline-mode');
-  if ($('offline-run')) $('offline-run').hidden = true;
-  window.AegisOfflineRun?.setVisible(false);
+  if (!window.AegisRunOverlay?.isOpen()) {
+    if ($('offline-run')) $('offline-run').hidden = true;
+    window.AegisOfflineRun?.setVisible(false);
+  }
   document.body.classList.toggle('start-visible', showStart);
   if (showStart) {
     setLoadingState(false);
@@ -379,13 +385,16 @@ function createTab(url, options = {}) {
   });
 
   webview.addEventListener('did-start-loading', () => {
+    if (id === activeTabId && !tabState.internalStart) window.AegisRunOverlay?.onLoadingStarted();
     if (!tabState.internalStart) {
       tabState.error = null;
       clearPendingNavigationFailure(tabState);
     }
     if (id === activeTabId && !tabState.internalStart) {
-      window.AegisOfflineRun?.setVisible(false);
-      if ($('offline-run')) $('offline-run').hidden = true;
+      if (!window.AegisRunOverlay?.isOpen()) {
+        window.AegisOfflineRun?.setVisible(false);
+        if ($('offline-run')) $('offline-run').hidden = true;
+      }
       $reloadBtn.textContent = '×';
       setLoadingState(true);
       $('error-page')?.classList.remove('show');
@@ -394,6 +403,7 @@ function createTab(url, options = {}) {
   });
   webview.addEventListener('did-stop-loading', () => {
     if (id === activeTabId) {
+      window.AegisRunOverlay?.onLoadingStopped();
       $reloadBtn.textContent = '↻';
       setLoadingState(false);
     }
@@ -420,6 +430,7 @@ function createTab(url, options = {}) {
     persistSessionSoon();
   });
   webview.addEventListener('did-finish-load', () => {
+    if (id === activeTabId) window.AegisRunOverlay?.onLoadingStopped();
     if (tabState.internalStart) return;
     clearPendingNavigationFailure(tabState);
     tabState.error = null;
@@ -458,6 +469,7 @@ function createTab(url, options = {}) {
   webview.addEventListener('media-started-playing', () => audioEl?.classList.add('show'));
   webview.addEventListener('media-paused', () => { if (!webview.isAudioMuted()) audioEl?.classList.remove('show'); });
   webview.addEventListener('did-fail-load', event => {
+    if (id === activeTabId) window.AegisRunOverlay?.onLoadingStopped();
     // Chromium emits provisional failures during normal redirects/cancellations.
     // Ignore those and delay real failures so a successful redirect can win.
     if (event.errorCode === -3 || event.isMainFrame === false || tabState.internalStart) return;
