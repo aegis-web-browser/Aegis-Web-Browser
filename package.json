@@ -1,7 +1,7 @@
 {
   "name": "aegis-web",
-  "version": "5.9.2-beta.4",
-  "description": "Aegis Web 5.9.2 beta 4 — verified live deals, responsive Start, auto offline runner, parental controls",
+  "version": "5.9.2-beta.5",
+  "description": "Aegis Web 5.9.2 beta 5 — fix Start page overlay on websites",
   "main": "main.js",
   "author": "Aegis Web",
   "license": "MIT",
