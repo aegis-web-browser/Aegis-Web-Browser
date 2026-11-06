@@ -10,6 +10,7 @@ const { spawn, execFile } = require('child_process');
 const { trustedUpdateUrl, requiredUpdateSha256 } = require('./lib/update-security');
 const { compareVersions } = require('./lib/version');
 const { checkVirusTotalFile, uploadVirusTotalFile, vtErrorMessage } = require('./lib/virustotal-file');
+const { getLiveDailyOffer } = require('./lib/live-deals');
 
 const APP_VERSION = require('./package.json').version;
 const SUPPORT_URL = 'https://buymeacoffee.com/aegisweb';
@@ -2337,6 +2338,44 @@ ipcMain.handle('store:clearHistory', () => {
   saveStore();
   return store.history;
 });
+
+let liveDealCache=null;
+let liveDealCacheAt=0;
+let pendingLiveDeals=null;
+ipcMain.handle('deals:getToday', async event => {
+  if (!mainWindow || event.sender.id !== mainWindow.webContents.id) return {ok:false,offer:null,error:'unauthorized'};
+  const now=Date.now();
+  if(liveDealCache && now-liveDealCacheAt<60*60*1000) return liveDealCache;
+  if(!pendingLiveDeals) {
+    pendingLiveDeals=getLiveDailyOffer().then(result=>{
+      liveDealCache=result;
+      liveDealCacheAt=Date.now();
+      return result;
+    }).finally(()=>{pendingLiveDeals=null;});
+  }
+  return pendingLiveDeals;
+});
+
+// Electron's network link detection plus an HTTPS reachability check.
+// "offline" is emitted only after link disconnect or a failed test, not on a slow web page.
+let lastNetworkCheck=null;
+ipcMain.handle('network:probe', async event => {
+  if (!mainWindow || event.sender.id !== mainWindow.webContents.id) return {online:null,source:'unauthorized'};
+  const {net}=require('electron');
+  if(net.isOnline()===false)return {online:false,source:'link'};
+  if(lastNetworkCheck&&Date.now()-lastNetworkCheck.at<8000)return lastNetworkCheck.value;
+  const value=await new Promise(resolve=>{
+    const req=https.get('https://www.gstatic.com/generate_204',{timeout:3500},res=>{
+      res.resume();
+      resolve({online:res.statusCode===204,source:'https-probe'});
+    });
+    req.once('timeout',()=>req.destroy(new Error('timeout')));
+    req.once('error',()=>resolve({online:false,source:'https-probe'}));
+  });
+  lastNetworkCheck={at:Date.now(),value};
+  return value;
+});
+
 ipcMain.handle('adultFilter:status', () => adultFilterStatus());
 ipcMain.handle('adultFilter:refresh', () => refreshAdultFilter(true));
 ipcMain.handle('store:setSettings', (_event, settings) => {
