@@ -71,3 +71,13 @@ test('score and difficulty progress, pause freezes all movement', () => {
   step(state, 0.04);
   assert.equal(state.distance, before);
 });
+
+
+test('keyboard controls still work after Play button has focus but never hijack text inputs', () => {
+  const { ignoresGameKeyTarget } = require('../src/offline-run');
+  const button = { closest: selector => selector.includes('button') ? {} : null };
+  const input = { closest: selector => selector.includes('input') ? {} : null };
+  assert.equal(ignoresGameKeyTarget(button), false);
+  assert.equal(ignoresGameKeyTarget(input), true);
+  assert.equal(ignoresGameKeyTarget(null), false);
+});
