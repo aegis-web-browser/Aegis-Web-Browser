@@ -1,7 +1,15 @@
 /* Aegis 5.9.2 beta 4: responsive Start + live deals + offline runner overlay. */
-/* On small windows, content scrolls instead of centering below the visible area. */
-.start-page {
+/* On small windows, content scrolls instead of centering below the visible area.
+   Keep the browser's .show-based visibility contract: a hidden Start must NEVER
+   cover an active webview. */
+.start-page:not(.show) {
+  display:none!important;
+  pointer-events:none!important;
+}
+.start-page.show {
   display:block!important;
+}
+.start-page {
   overflow-x:hidden!important;
   overflow-y:auto!important;
   scrollbar-width:thin;
