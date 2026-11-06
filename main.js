@@ -11,6 +11,7 @@ const { trustedUpdateUrl, requiredUpdateSha256 } = require('./lib/update-securit
 const { compareVersions } = require('./lib/version');
 const { checkVirusTotalFile, uploadVirusTotalFile, vtErrorMessage } = require('./lib/virustotal-file');
 const { getLiveDailyOffer } = require('./lib/live-deals');
+const { ParentalControl } = require('./lib/parental-control');
 
 const APP_VERSION = require('./package.json').version;
 const SUPPORT_URL = 'https://buymeacoffee.com/aegisweb';
@@ -21,6 +22,9 @@ const LEGACY_USER_DATA_PATH = app.getPath('userData');
 const LEGACY_531_PATH = path.join(app.getPath('appData'), 'Aegis Web 531');
 const CLEAN_PROFILE_PATH = path.join(app.getPath('appData'), 'Aegis Web 582');
 app.setPath('userData', CLEAN_PROFILE_PATH);
+// Dedicated policy file: never expose the salted PIN hash through the normal settings store.
+const parentalController = new ParentalControl(path.join(CLEAN_PROFILE_PATH,'parental-control.json'));
+let parentalTickAt = Date.now();
 const CLEAN_BUILD_ID = '5.8.5.1-github-releases';
 const STARTUP_LOG_DIR = path.join(app.getPath('appData'), 'Aegis Web 531');
 const STARTUP_LOG_FILE = path.join(STARTUP_LOG_DIR, 'startup-5.8.5.1.log');
@@ -1502,6 +1506,14 @@ function configureBrowserSession(webSession) {
     webSession.setUserAgent(standardChromiumUserAgent(), browserAcceptLanguage());
   } catch {}
   webSession.webRequest.onBeforeRequest((details, callback) => {
+    const parentalReason=parentalController.whyBlocked(details.url);
+    if(parentalReason){
+      if(details?.resourceType==='mainFrame'){
+        try{mainWindow?.webContents.send('browser:parental-blocked',{reason:parentalReason,url:String(details.url||'').slice(0,2048),guestId:Number(details.webContentsId||0)});}catch{}
+      }
+      callback({cancel:true});
+      return;
+    }
     if (adultFilterMatches(details.url)) {
       if (details?.resourceType === 'mainFrame') {
         try { mainWindow?.webContents.send('browser:adult-blocked', {guestId:Number(details.webContentsId || 0)}); } catch {}
@@ -2208,6 +2220,16 @@ app.whenReady().then(() => {
   // Create a visible window BEFORE optional networking/session hooks. A failure
   // in a protection feature must never leave Electron alive without a window.
   createWindow();
+  // Screen-time accounting occurs in the trusted main process, not web page JavaScript.
+  parentalTickAt=Date.now();
+  setInterval(()=>{
+    const now=Date.now();
+    const delta=Math.max(0,Math.min(15000,now-parentalTickAt));
+    parentalTickAt=now;
+    const focused=Boolean(mainWindow&&!mainWindow.isDestroyed()&&mainWindow.isFocused()&&!mainWindow.isMinimized());
+    const result=parentalController.tick(delta,focused);
+    if(result.crossed)mainWindow?.webContents.send('parental:expired');
+  },15000).unref();
   if (store?.settings?.autoCheckUpdates !== false) setTimeout(() => checkForUpdates(false).catch(() => {}), 4500);
   const startupSessions = new Map([
     ['persist:main', session.fromPartition('persist:main')],
@@ -2375,6 +2397,23 @@ ipcMain.handle('network:probe', async event => {
   lastNetworkCheck={at:Date.now(),value};
   return value;
 });
+
+// Parental controls require PIN-verified native IPC; ordinary settings cannot bypass them.
+function parentalTrustedCaller(event){
+  return Boolean(mainWindow&&!mainWindow.isDestroyed()&&event.sender.id===mainWindow.webContents.id);
+}
+ipcMain.handle('parental:status', event=>
+  parentalTrustedCaller(event)?parentalController.status():{enabled:false,configured:false,error:'unauthorized'});
+ipcMain.handle('parental:create',(event,payload={})=>
+  parentalTrustedCaller(event)?parentalController.create(payload.pin,payload.confirm):{ok:false,error:'unauthorized'});
+ipcMain.handle('parental:configure',(event,payload={})=>
+  parentalTrustedCaller(event)?parentalController.configure(payload.pin,payload):{ok:false,error:'unauthorized'});
+ipcMain.handle('parental:unlock',(event,pin)=>
+  parentalTrustedCaller(event)?parentalController.unlock(pin):{ok:false,error:'unauthorized'});
+ipcMain.handle('parental:disable',(event,pin)=>
+  parentalTrustedCaller(event)?parentalController.disable(pin):{ok:false,error:'unauthorized'});
+ipcMain.handle('parental:changePin',(event,payload={})=>
+  parentalTrustedCaller(event)?parentalController.changePin(payload.oldPin,payload.newPin,payload.confirm):{ok:false,error:'unauthorized'});
 
 ipcMain.handle('adultFilter:status', () => adultFilterStatus());
 ipcMain.handle('adultFilter:refresh', () => refreshAdultFilter(true));
