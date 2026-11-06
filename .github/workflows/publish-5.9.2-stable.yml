@@ -1,0 +1,69 @@
+name: Publish Aegis Web 5.9.2 official stable Windows
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-5.9.2-stable.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: aegis-5.9.2-official
+  cancel-in-progress: false
+
+jobs:
+  publish-stable:
+    if: github.repository == 'aegis-web-browser/Aegis-Web-Browser'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout official 5.9.2 source
+        uses: actions/checkout@v4
+        with:
+          ref: '36066763bf660c66584109f573db6961a8e9bccd'
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify official version and pinned source
+        shell: pwsh
+        run: |
+          $p=Get-Content package.json -Raw | ConvertFrom-Json
+          if ($p.version -ne '5.9.2') { throw "Wrong version: $($p.version)" }
+          $rev=git rev-parse HEAD
+          if ($rev -ne '36066763bf660c66584109f573db6961a8e9bccd') { throw "Wrong commit: $rev" }
+      - name: Install build dependencies
+        run: npm install --no-audit --no-fund
+      - name: Check source syntax
+        run: npm run lint:syntax
+      - name: Run unit tests
+        run: npm test
+      - name: Build Windows official 5.9.2 installer
+        run: npm run build -- --publish never
+      - name: Prepare official download name and checksum
+        shell: pwsh
+        run: |
+          $source='dist/Aegis-Web-Setup-5.9.2.exe'
+          $target='dist/Aegis-Web-Setup-Windows.exe'
+          if (!(Test-Path -LiteralPath $source)) { throw "Installer not found: $source" }
+          Move-Item -LiteralPath $source -Destination $target -Force
+          $sha=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$sha  Aegis-Web-Setup-Windows.exe" | Set-Content -LiteralPath 'dist/SHA256SUMS.txt' -Encoding ascii
+          Write-Host "SHA256: $sha"
+      - name: Retrieve published release notes
+        shell: pwsh
+        run: |
+          $url="https://raw.githubusercontent.com/$env:GITHUB_REPOSITORY/main/RELEASE-NOTES-5.9.2.md"
+          Invoke-WebRequest -Uri $url -OutFile 'dist/RELEASE-NOTES.md'
+      - name: Publish stable release and mark latest
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view 5.9.2 -R $env:GITHUB_REPOSITORY --json tagName *> $null
+          if ($LASTEXITCODE -eq 0) { Write-Host "Stable 5.9.2 release already exists, refusing to overwrite"; exit 0 }
+          gh release create 5.9.2 "dist/Aegis-Web-Setup-Windows.exe" "dist/SHA256SUMS.txt" --repo $env:GITHUB_REPOSITORY --target '36066763bf660c66584109f573db6961a8e9bccd' --title 'Aegis Web 5.9.2 — official Windows release' --notes-file 'dist/RELEASE-NOTES.md' --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Official release creation failed' }
