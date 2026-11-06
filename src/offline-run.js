@@ -312,7 +312,9 @@
   }
   function onKeyDown(event) {
     if (!visible || root.hidden || event.altKey || event.ctrlKey || event.metaKey) return;
-    if (event.target?.closest?.('input, textarea, select, button, [contenteditable="true"]')) return;
+    // A previously clicked Play/Jump button keeps keyboard focus. Button focus
+    // must NOT suppress Space/Up/Down (and Space must not click Play again).
+    if (event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
     if (['Space', 'ArrowUp', 'KeyW'].includes(event.code)) {
       event.preventDefault();
       if (!event.repeat) jump(state);
@@ -331,12 +333,13 @@
   window.addEventListener('keyup', event => {
     if (['ArrowDown', 'KeyS'].includes(event.code)) duck(state, false);
   });
-  $('offline-run-start').addEventListener('click', togglePlay);
-  $('offline-run-jump').addEventListener('click', () => { if (visible) jump(state); });
+  function focusCanvas() { canvas.setAttribute('tabindex','0'); canvas.focus({preventScroll:true}); }
+  $('offline-run-start').addEventListener('click', () => { togglePlay(); focusCanvas(); });
+  $('offline-run-jump').addEventListener('click', () => { if (visible) jump(state); focusCanvas(); });
   const slide = $('offline-run-duck');
   slide.addEventListener('pointerdown', event => { if (visible) { event.preventDefault(); duck(state, true); } });
   for (const type of ['pointerup', 'pointercancel', 'pointerleave', 'blur']) slide.addEventListener(type, () => duck(state, false));
-  canvas.addEventListener('pointerdown', event => { if (visible) { event.preventDefault(); jump(state); } });
+  canvas.addEventListener('pointerdown', event => { if (visible) { event.preventDefault(); jump(state); focusCanvas(); } });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && visible && state.mode === 'running') {
       state.mode = 'paused';
