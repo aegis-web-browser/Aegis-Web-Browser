@@ -43,4 +43,6 @@ test('Electron main process wires both permission handlers and never auto grants
   assert.match(main,/setPermissionRequestHandler\(\(contents, permission, callback, details\)/);
   assert.match(main,/clipboardPermissionAllowed\(contents, permission, requestingOrigin, details\)/);
   assert.match(main,/clipboardPermissionAllowed\(contents, permission, details\?\.requestingUrl, details\)/);
+  assert.doesNotMatch(main,/app\.commandLine\.appendSwitch\('deny-permission-prompts'\)/);
+  assert.match(main,/configureSilentPermissions\(mainWindow\.webContents\.session\)/);
 });
