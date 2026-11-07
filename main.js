@@ -12,6 +12,7 @@ const { compareVersions } = require('./lib/version');
 const { checkVirusTotalFile, uploadVirusTotalFile, vtErrorMessage } = require('./lib/virustotal-file');
 const { getLiveDailyOffer } = require('./lib/live-deals');
 const { ParentalControl } = require('./lib/parental-control');
+const { clipboardPermissionAllowed } = require('./lib/clipboard-permissions');
 
 const APP_VERSION = require('./package.json').version;
 const SUPPORT_URL = 'https://buymeacoffee.com/aegisweb';
@@ -1396,11 +1397,17 @@ function configureSilentPermissions(webSession) {
   if (!webSession || configuredPermissionSessions.has(webSession)) return;
   configuredPermissionSessions.add(webSession);
   const allowed = new Set(['fullscreen']);
-  webSession.setPermissionCheckHandler((_contents, permission) => allowed.has(String(permission || '')));
-  webSession.setPermissionRequestHandler((_contents, permission, callback) => {
-    // Fullscreen is the normal browser permission used by YouTube/Vimeo players.
-    // Everything privacy-sensitive remains denied silently.
-    callback(allowed.has(String(permission || '')));
+  webSession.setPermissionCheckHandler((contents, permission, requestingOrigin, details) => {
+    if (allowed.has(String(permission || ''))) return true;
+    // HTTPS pages can write sanitized text via navigator.clipboard.writeText().
+    // This does NOT grant clipboard-read or access to unsanitized clipboard data.
+    return clipboardPermissionAllowed(contents, permission, requestingOrigin, details);
+  });
+  webSession.setPermissionRequestHandler((contents, permission, callback, details) => {
+    // Preserve fullscreen support, never grant camera/microphone/geolocation.
+    // Permission requests are silent. Sites can copy, not read clipboard data.
+    if (allowed.has(String(permission || ''))) return callback(true);
+    return callback(clipboardPermissionAllowed(contents, permission, details?.requestingUrl, details));
   });
 }
 function browserLanguageCode() { return store?.settings?.browserLanguage === 'fr' ? 'fr' : 'en'; }
