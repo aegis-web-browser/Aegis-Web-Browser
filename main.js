@@ -49,7 +49,8 @@ startupLog(`process started: execPath=${process.execPath} appPath=${app.getAppPa
 app.commandLine.appendSwitch('enable-logging', 'file');
 app.commandLine.appendSwitch('log-file', path.join(STARTUP_LOG_DIR, 'chromium-5.8.5.1.log'));
 if (process.platform === 'win32') app.setAppUserModelId('com.aegisweb.browser');
-app.commandLine.appendSwitch('deny-permission-prompts');
+// Permission prompts are handled silently per session; Chromium's global
+// deny-permission-prompts switch would also prevent legitimate Copy actions.
 function storedBrowserLanguageBeforeReady() {
   try {
     const file = path.join(CLEAN_PROFILE_PATH, 'store.json');
@@ -2028,6 +2029,9 @@ function createWindow() {
       disableHtmlFullscreenWindowResize: false
     }
   });
+  // The application shell must also have a silent deny-by-default policy.
+  // Webview guests receive their own session policy in configureBrowserSession().
+  configureSilentPermissions(mainWindow.webContents.session);
   Menu.setApplicationMenu(null);
   if (!position.x && !position.y) { try { mainWindow.center(); } catch {} }
   if (store?.windowState?.maximized) { try { mainWindow.maximize(); } catch {} }
