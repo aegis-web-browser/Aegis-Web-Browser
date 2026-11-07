@@ -1,0 +1,456 @@
+/* Aegis 5.9.2 beta 4: responsive Start + live deals + offline runner overlay. */
+/* On small windows, content scrolls instead of centering below the visible area.
+   Keep the browser's .show-based visibility contract: a hidden Start must NEVER
+   cover an active webview. */
+.start-page:not(.show) {
+  display:none!important;
+  pointer-events:none!important;
+}
+.start-page.show {
+  display:block!important;
+}
+.start-page {
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  scrollbar-width:thin;
+  overscroll-behavior:contain;
+}
+.start-page .start-shell{
+  position:relative;
+  width:min(1160px,calc(100% - 32px))!important;
+  max-width:none!important;
+  min-width:0!important;
+  min-height:100%!important;
+  margin:0 auto!important;
+  padding:clamp(12px,2.4vh,30px) 0 24px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:clamp(12px,2.2vh,22px)!important;
+  box-sizing:border-box;
+}
+.start-page .start-header,.start-page .start-footer{
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+  gap:10px!important;
+  min-width:0!important;
+}
+.start-page .start-hero{
+  position:relative;
+  flex:0 0 auto!important;
+  min-height:0!important;
+  min-width:0!important;
+  width:100%!important;
+  padding:clamp(16px,3vh,32px) clamp(12px,3vw,38px)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:clamp(10px,1.8vh,17px)!important;
+  overflow:visible!important;
+}
+.start-page .start-clock-wrap{
+  margin:0!important;
+  width:100%;
+  gap:0!important;
+}
+.start-page .start-clock-wrap b{
+  font-size:clamp(36px, min(7vw,7vh), 72px)!important;
+  line-height:1.14!important;
+  letter-spacing:-.05em!important;
+}
+.start-page .start-clock-wrap span{
+  font-size:clamp(11px,1.4vw,14px)!important;
+  margin-top:0!important;
+}
+.start-page .google-wordmark{
+  font-size:clamp(42px,7.4vw,78px)!important;
+  margin:0!important;
+  line-height:1.08!important;
+}
+.start-page .start-search{
+  width:min(880px,100%)!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:clamp(48px,7vh,60px)!important;
+  flex:0 0 auto!important;
+}
+.start-page .start-search input{
+  min-width:0!important;
+  font-size:clamp(12px,1.4vw,16px)!important;
+  height:100%!important;
+}
+.start-page .start-search-modes{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:7px!important;
+  justify-content:center!important;
+  margin:0!important;
+}
+.start-page .start-quick-actions{
+  width:min(940px,100%)!important;
+  max-width:100%!important;
+  margin:0!important;
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr))!important;
+  gap:10px!important;
+}
+.start-page .start-quick-actions button{
+  width:100%!important;
+  min-width:0!important;
+  min-height:62px!important;
+  height:auto!important;
+  overflow:hidden!important;
+}
+.start-page .start-pulse-grid{
+  width:min(940px,100%)!important;
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))!important;
+  gap:10px!important;
+  margin:0!important;
+}
+.start-page .start-pulse-card{min-width:0!important}
+.start-page .start-shortcuts{
+  width:min(940px,100%)!important;
+  max-width:100%!important;
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,100px),1fr))!important;
+  gap:10px!important;
+  margin-top:4px!important;
+}
+.start-page .start-recents-wrap{
+  width:100%!important;
+  margin:0!important;
+  min-width:0!important;
+}
+.start-page .start-recents{
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,195px),1fr))!important;
+}
+.start-page .start-footer{
+  margin-top:auto!important;
+  font-size:11px!important;
+  line-height:1.5!important;
+}
+.start-page .start-status-row{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+}
+
+/* One genuine, verified offer with the source and checked price. */
+#aegis-start-daily-deal{
+  width:min(880px,100%);
+  min-width:0;
+  padding:16px 20px;
+  margin:0!important;
+  color:var(--text);
+  text-align:left;
+  border:1px solid rgba(var(--accent-rgb),.22);
+  border-radius:18px;
+  background:var(--start-panel,var(--surface));
+  box-shadow:0 16px 40px rgba(0,0,0,.16);
+}
+#aegis-start-daily-deal .aegis-deal-badge{
+  color:var(--accent);
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:1.3px;
+  margin-bottom:7px;
+}
+#aegis-start-daily-deal .aegis-deal-body{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:18px;
+  min-width:0;
+}
+#aegis-start-daily-deal .aegis-deal-info{
+  display:flex;
+  flex:1;
+  min-width:0;
+  flex-direction:column;
+  gap:5px;
+}
+#aegis-start-daily-deal small{font-size:11px;color:var(--text-2)}
+#aegis-start-daily-deal h3{
+  font-size:clamp(17px,2vw,23px);
+  margin:0;
+  line-height:1.22;
+  overflow-wrap:anywhere;
+}
+#aegis-start-daily-deal p{
+  font-size:12px;
+  margin:0;
+  color:var(--text-2);
+  overflow-wrap:anywhere;
+}
+#aegis-deal-warning{font-size:10px;color:var(--muted);line-height:1.5}
+#aegis-deal-visit{
+  flex:0 0 auto;
+  color:#07160f;
+  font-weight:800;
+  background:var(--accent);
+  border:0;
+  border-radius:11px;
+  padding:11px 15px;
+  cursor:pointer;
+}
+#aegis-deal-visit:hover{background:var(--accent-2)}
+#aegis-deal-visit:disabled{opacity:.5;cursor:default}
+
+/* Mini-game overlay: occupies available space without affecting navigation layout. */
+#aegis-network-game[hidden],#aegis-slow-game-notice[hidden]{display:none!important}
+#aegis-network-game{
+  position:fixed;
+  inset:0;
+  z-index:9000;
+  display:grid;
+  place-items:center;
+  background:rgba(2,8,16,.91);
+  backdrop-filter:blur(9px);
+  padding:clamp(10px,2.5vw,28px);
+  overflow-y:auto;
+  color:#ebf7fa;
+}
+.aegis-network-game-box{
+  width:min(890px,100%);
+  max-height:calc(100vh - 32px);
+  overflow-y:auto;
+  border:1px solid rgba(89,220,194,.32);
+  background:#111f31;
+  border-radius:22px;
+  box-shadow:0 25px 90px #0009;
+  padding:clamp(13px,2vw,24px);
+}
+.aegis-network-game-header{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+  margin-bottom:15px;
+}
+.aegis-network-game-header h2{
+  font-size:clamp(19px,3vw,27px);
+  margin:3px 0;
+}
+.aegis-network-game-header p{color:#9eb9c8;font-size:12px;margin:0}
+.aegis-game-tag{font-size:10px;letter-spacing:1.5px;color:#6bdfc0;font-weight:850}
+.aegis-game-overlay-close{
+  width:36px;height:36px;
+  border:1px solid #34546a;
+  border-radius:10px;
+  background:#244056;
+  color:#e4f5f8;
+  font-size:25px;
+  cursor:pointer;
+}
+#aegis-game-slot>.aegis-offline-run{width:100%;background:#0c1d30}
+.aegis-network-game-footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-top:13px;
+  font-size:11px;
+  color:#a0d9d0;
+}
+#aegis-game-overlay-continue,#aegis-slow-game-play{
+  background:#227767;
+  border:1px solid #4fd1ba;
+  border-radius:10px;
+  color:#fff;
+  font-weight:700;
+  padding:10px 13px;
+  cursor:pointer;
+}
+#aegis-slow-game-notice{
+  position:fixed;
+  z-index:8000;
+  right:18px;
+  bottom:52px;
+  max-width:min(510px,calc(100vw - 28px));
+  display:flex;
+  align-items:center;
+  gap:13px;
+  flex-wrap:wrap;
+  padding:13px 14px;
+  border:1px solid rgba(86,211,189,.38);
+  border-radius:15px;
+  background:#17283b;
+  color:#f3ffff;
+  box-shadow:0 14px 40px #0008;
+}
+#aegis-slow-game-notice div{display:flex;flex-direction:column;gap:4px;flex:1}
+#aegis-slow-game-notice strong{font-size:13px}
+#aegis-slow-game-notice span{font-size:11px;color:#b8d4d9}
+#aegis-slow-game-dismiss{
+  border:0;background:transparent;color:#b4d3dc;cursor:pointer;font-size:23px;
+}
+#aegis-network-game #offline-run-canvas:focus-visible{
+  outline:3px solid #84f8d5;
+  outline-offset:2px;
+}
+@media(max-width:760px),(max-height:670px){
+  .start-page .start-hero{padding:12px!important;gap:11px!important}
+  .start-page .start-clock-wrap b{font-size:clamp(34px,6.3vw,56px)!important}
+  .start-page .google-wordmark{font-size:clamp(40px,6.5vw,63px)!important}
+  .start-page .start-shell{width:calc(100% - 18px)!important;padding:10px 0 18px!important}
+  .start-page .start-header{align-items:flex-start!important}
+  .start-page .start-status-row{justify-content:flex-start!important}
+  #aegis-start-daily-deal .aegis-deal-body{flex-direction:column;align-items:stretch}
+  #aegis-deal-visit{width:100%}
+}
+@media(max-width:480px){
+  .start-page .start-quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .start-page .start-pulse-grid{grid-template-columns:1fr!important}
+  .start-page .start-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .start-page .start-search{padding:0 11px!important;gap:8px!important}
+  .start-page .start-search-hint{display:none!important}
+  .start-page .start-brand{height:auto!important}
+  #aegis-network-game{padding:6px}
+  .aegis-network-game-box{max-height:calc(100vh - 12px);padding:11px;border-radius:14px}
+  #aegis-slow-game-notice{right:8px;bottom:8px}
+}
+@media(prefers-reduced-motion:reduce){
+  #aegis-start-daily-deal *,#aegis-network-game *{animation:none!important;transition:none!important}
+}
+
+
+/* Aegis native parental-controls UI */
+#aegis-parental-settings{
+  display:flex;
+  flex-direction:column;
+  gap:13px;
+  padding-top:12px;
+  border-top:1px solid var(--border);
+  color:var(--text);
+}
+#aegis-parental-settings .settings-section-title{margin:0 0 3px}
+#aegis-parental-settings .settings-note{margin:0;color:var(--muted);line-height:1.5}
+#aegis-parental-settings .aegis-parental-status{
+  border:1px solid rgba(var(--accent-rgb),.27);
+  border-radius:11px;
+  background:var(--bg-soft);
+  color:var(--text-2);
+  padding:12px;
+  font-size:12px;
+  line-height:1.5;
+}
+#aegis-parental-settings .field-label{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  font-size:12px;
+  color:var(--text-2);
+}
+#aegis-parental-settings select,#aegis-parental-settings textarea{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:11px;
+  padding:10px 12px;
+  background:var(--bg-soft);
+  color:var(--text);
+  font:inherit;
+  user-select:text;
+}
+#aegis-parental-settings textarea{min-height:98px;resize:vertical}
+#aegis-parental-settings .aegis-parental-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+}
+#aegis-parental-settings button{min-height:36px;flex:1 1 150px}
+.aegis-parental-modal{
+  position:fixed;
+  inset:0;
+  z-index:13000;
+  background:rgba(0,0,0,.78);
+  backdrop-filter:blur(5px);
+  display:grid;
+  place-items:center;
+  padding:14px;
+}
+.aegis-parental-dialog{
+  width:min(420px,100%);
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  padding:24px;
+  background:var(--surface);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:18px;
+  box-shadow:0 25px 80px #0008;
+}
+.aegis-parental-dialog h2{font-size:17px;margin:0}
+.aegis-parental-dialog input{
+  width:100%;
+  height:43px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--bg-soft);
+  color:var(--text);
+  padding:0 12px;
+  user-select:text;
+  font-size:16px;
+}
+.aegis-parental-dialog>div{display:flex;gap:8px;justify-content:flex-end}
+#aegis-parental-alert{
+  position:fixed;
+  z-index:12000;
+  right:18px;
+  bottom:62px;
+  width:min(500px,calc(100vw - 32px));
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+  align-items:center;
+  border:1px solid rgba(242,191,96,.48);
+  background:#2d271c;
+  color:#fff1d9;
+  border-radius:13px;
+  padding:14px;
+  box-shadow:0 14px 44px #0007;
+}
+#aegis-parental-alert strong{font-size:13px}
+#aegis-parental-alert span{font-size:12px;flex:1 1 100%}
+#aegis-parental-alert button[data-close]{
+  border:0;background:transparent;color:#fff1d9;
+  font-size:23px;cursor:pointer;margin-left:auto;
+}
+
+
+/* Standalone Focus — separate from Aegis Run and Start daily deals. */
+#aegis-focus-view[hidden]{display:none!important}
+#aegis-focus-view{
+  position:fixed;right:0;top:0;bottom:0;
+  width:min(410px,100vw);z-index:7000;overflow:auto;
+  padding:0 24px 24px;
+  background:var(--surface);color:var(--text);
+  border-left:1px solid var(--border);
+  box-shadow:-22px 0 70px rgba(0,0,0,.3);
+}
+#aegis-focus-view .aegis-focus-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+  margin:0 -24px 22px;padding:22px 24px 16px;border-bottom:1px solid var(--border);
+}
+#aegis-focus-view .aegis-focus-head small{font-size:10px;font-weight:800;color:var(--accent);letter-spacing:1.1px}
+#aegis-focus-view h2{font-size:21px;margin:4px 0 0}
+#aegis-focus-close{border:0;background:var(--bg-soft);color:var(--text);border-radius:10px;font-size:26px;width:37px;height:37px;cursor:pointer}
+#aegis-focus-intro,#aegis-focus-help{font-size:12px;color:var(--text-2);line-height:1.65}
+.aegis-focus-circle{
+  width:min(245px,70vw);aspect-ratio:1/1;border-radius:50%;
+  border:9px solid var(--accent);margin:22px auto;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  background:var(--bg-soft);box-shadow:inset 0 0 0 7px rgba(var(--accent-rgb),.1);
+}
+#aegis-focus-time{font-size:clamp(40px,7vw,53px);font-variant-numeric:tabular-nums}
+#aegis-focus-state{font-size:12px;color:var(--text-2)}
+#aegis-focus-length-label{display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--text-2)}
+#aegis-focus-length{height:41px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:0 10px}
+.aegis-focus-actions{display:flex;gap:8px;margin:20px 0 12px}
+.aegis-focus-actions>button{flex:1}
+#aegis-focus-minimal{width:100%}
