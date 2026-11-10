@@ -14,6 +14,39 @@ const { getLiveDailyOffer } = require('./lib/live-deals');
 const { ParentalControl } = require('./lib/parental-control');
 const { clipboardPermissionAllowed } = require('./lib/clipboard-permissions');
 
+// Route PDFs delivered by Explorer/Finder to Aegis PDF Studio without taking over .pdf defaults.
+const { pdfPathsFromArguments, resolvePdfPath, readPdfFile } = require('./lib/pdf-file-open');
+const pendingPdfFiles = [];
+function enqueuePdfFiles(values) {
+  for (const pathname of values) if (!pendingPdfFiles.includes(pathname)) pendingPdfFiles.push(pathname);
+  if (app.isReady()) setImmediate(flushPendingPdfFiles);
+}
+function flushPendingPdfFiles() {
+  if (!app.isReady() || !mainWindow || mainWindow.isDestroyed()) return;
+  for (const pathname of pendingPdfFiles.splice(0)) openAegisPdfStudio(pathname);
+}
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  enqueuePdfFiles(pdfPathsFromArguments(process.argv, { skipFirst: app.isPackaged ? 1 : 2 }));
+  app.on('second-instance', (_event, argv, workingDirectory) => {
+    enqueuePdfFiles(pdfPathsFromArguments(argv, {
+      cwd: workingDirectory || process.cwd(), skipFirst: app.isPackaged ? 1 : 2
+    }));
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+  app.on('open-file', (event, filename) => {
+    event.preventDefault();
+    const pdfPath = resolvePdfPath(filename);
+    if (pdfPath) enqueuePdfFiles([pdfPath]);
+  });
+}
+
 const APP_VERSION = require('./package.json').version;
 const SUPPORT_URL = 'https://buymeacoffee.com/aegisweb';
 
@@ -2231,6 +2264,7 @@ app.whenReady().then(() => {
   // Create a visible window BEFORE optional networking/session hooks. A failure
   // in a protection feature must never leave Electron alive without a window.
   createWindow();
+  flushPendingPdfFiles();
   // Screen-time accounting occurs in the trusted main process, not web page JavaScript.
   parentalTickAt=Date.now();
   setInterval(()=>{
@@ -2655,7 +2689,7 @@ ipcMain.handle('window:toggleFullscreen', () => {
 
 // Aegis PDF Studio — each PDF stays local; editing is an explicit Save As action.
 const pdfEditorWindows = new Set();
-function openAegisPdfStudio() {
+function openAegisPdfStudio(initialPdfPath = null) {
   const window = new BrowserWindow({
     width: 1100, height: 820, minWidth: 780, minHeight: 540,
     title: 'Aegis PDF Studio', autoHideMenuBar: true,
@@ -2667,6 +2701,10 @@ function openAegisPdfStudio() {
   });
   pdfEditorWindows.add(window);
   window.on('closed', () => pdfEditorWindows.delete(window));
+  if (initialPdfPath) window.aegisInitialPdf = initialPdfPath;
+  if (initialPdfPath) window.webContents.once('did-finish-load', () => {
+    if (!window.isDestroyed()) window.webContents.send('pdf:initial-file', initialPdfPath);
+  });
   window.loadFile(path.join(__dirname, 'src', 'pdf-studio.html'));
   return true;
 }
@@ -2677,10 +2715,16 @@ ipcMain.handle('pdf:open', async event => {
     title: 'Ouvrir un PDF', properties: ['openFile'], filters: [{name:'PDF',extensions:['pdf']}]
   });
   if (result.canceled || !result.filePaths?.length) return null;
-  const filename = result.filePaths[0];
-  const bytes = await fs.promises.readFile(filename);
-  if (bytes.length > 65 * 1024 * 1024 || bytes.subarray(0,5).toString('latin1') !== '%PDF-') throw new Error('PDF invalide ou supérieur à 65 Mo');
-  return {name:path.basename(filename), data:bytes.toString('base64')};
+  return readPdfFile(result.filePaths[0]);
+});
+ipcMain.handle('pdf:read-initial', async (event, filename) => {
+  if (!pdfEditorWindows.has(BrowserWindow.fromWebContents(event.sender))) throw new Error('Unauthorized PDF window');
+  // Only allow OS-delivered paths: the page never chooses an arbitrary filesystem path.
+  const window = BrowserWindow.fromWebContents(event.sender);
+  const assigned = window?.aegisInitialPdf;
+  if (!assigned || filename !== assigned) throw new Error('Unauthorized PDF path');
+  window.aegisInitialPdf = null;
+  return readPdfFile(assigned);
 });
 ipcMain.handle('pdf:save', async (event, payload = {}) => {
   if (!pdfEditorWindows.has(BrowserWindow.fromWebContents(event.sender))) throw new Error('Unauthorized PDF window');
