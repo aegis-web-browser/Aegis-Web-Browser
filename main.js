@@ -2246,7 +2246,7 @@ function createWindow() {
   mainWindow.on('close', saveWindowState);
   mainWindow.on('closed', () => { mainWindow = null; });
 }
-app.whenReady().then(() => {
+if (hasSingleInstanceLock) app.whenReady().then(() => {
   startupLog('app ready');
   try {
     storeFile = path.join(app.getPath('userData'), 'store.json');
