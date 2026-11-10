@@ -33,8 +33,7 @@
       "build/icon.png",
       "package.json",
       "pdf-preload.js",
-      "lib/**/*",
-      "build/installer.nsh"
+      "lib/**/*"
     ],
     "win": {
       "icon": "build/icon.ico",
@@ -58,14 +57,6 @@
       "uninstallerIcon": "build/icon.ico",
       "include": "build/installer.nsh"
     },
-    "fileAssociations": [
-      {
-        "ext": "pdf",
-        "name": "PDF document",
-        "description": "PDF document",
-        "role": "Viewer"
-      }
-    ],
     "mac": {
       "target": [
         {
