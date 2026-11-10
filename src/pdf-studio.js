@@ -83,6 +83,21 @@ $('open').onclick=async()=>{
   $('name').textContent=filename;
  }catch(e){notice('Erreur de chargement : '+e.message)}finally{loading=false}
 };
+window.pdfBridge.onInitialFile(async pathname => {
+  if (loading) return;
+  loading = true;
+  try {
+    const selected = await window.pdfBridge.readInitial(pathname);
+    filename = selected.name;
+    await loadLibraries();
+    await loadBytes(base64ToBytes(selected.data));
+    $('name').textContent = filename;
+  } catch (error) {
+    notice('Erreur d’ouverture du PDF : ' + error.message);
+  } finally {
+    loading = false;
+  }
+});
 async function persist(doc, label){
  const out=await doc.save({useObjectStreams:false});
  const result=await window.pdfBridge.save({filename:filename.replace(/\.pdf$/i,'')+'-modifie.pdf',data:toBase64(out)});

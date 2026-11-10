@@ -1,0 +1,27 @@
+name: Aegis Chat signaling service checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "services/chat-signaling/**"
+      - ".github/workflows/chat-signaling-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signaling:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install signaling dependencies
+        run: npm install --prefix services/chat-signaling --no-audit --no-fund
+      - name: Check signaling service syntax
+        run: node --check services/chat-signaling/server.js
+      - name: Run signaling tests
+        run: npm test --prefix services/chat-signaling

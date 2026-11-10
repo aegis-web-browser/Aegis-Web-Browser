@@ -1,0 +1,17 @@
+{
+  "name": "aegis-chat-signaling",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Optional signaling-only service for Aegis Chat public room discovery and WebRTC",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}

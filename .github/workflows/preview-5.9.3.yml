@@ -1,0 +1,62 @@
+name: Aegis Web 5.9.3 Windows and macOS preview
+
+on:
+  push:
+    branches: ['feature/5.9.3-pdf-open-macos']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Source checks and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run lint:syntax
+      - run: npm test
+
+  windows:
+    name: Windows x64 preview installer
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm run build -- --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Aegis-Web-5.9.3-Windows-preview
+          path: dist/*.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  macos:
+    name: macOS Intel and Apple Silicon preview packages
+    needs: test
+    runs-on: macos-15
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Build standalone macOS application (not notarized)
+        run: npm run build:mac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Aegis-Web-5.9.3-macOS-preview
+          path: |
+            dist/*.dmg
+            dist/*.zip
+          if-no-files-found: error
+          retention-days: 14
